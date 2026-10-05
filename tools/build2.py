@@ -249,7 +249,7 @@ def allies_page(B):
 <div class="sec"><h2>Their looks</h2><div class="variants" style="grid-template-columns:repeat(6,1fr)">%s</div></div>
 <div class="tip"><b>ACHIEVEMENT</b>Revive a downed survivor to unlock No One Left Behind.</div>''' % (steps(T.ALLIES_HOW, fmt=fmt), rem, finds, skins)
     rows = [('Health', '%d &#10084;' % a['health']), ('Damage', str(a['damage'])), ('Bag', '%d things' % a['bag']), ('Hire', '%d scrap' % hire),
-            ('Revive', '%g s sneaking' % a['revive']), ('Bleed out', '%d s' % a['bleed_out'])]
+            ('Revive', '%g s sneaking' % a['revive']), ('Time to save them', '%d s' % a['bleed_out'])]
     page(B, 'allies.html', 'Allies', 'allies', [], E(T.ALLIES_INTRO), main, side_pic('img/npc/survivor_ally_0.png', rows))
 
 
