@@ -449,12 +449,13 @@ def mods_page(ws, mods, finder, by_id):
 <div class="sec"><h2>Weapons that accept a mod</h2><div class="mini">%(grid)s</div></div>
 <div class="sec"><h2>Reinforced weapons</h2><div class="box"><p>%(reinforce)s</p>%(levels)s</div></div>
 <div class="tip"><b>REPAIRS</b>%(wrench)s</div>
-</div><aside class="info"><div class="viewer" style="cursor:default"><div class="still" style="display:flex"><img src="img/misc/fabricator.png" alt=""></div></div>
+</div><aside class="info"><div class="viewer" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span><div class="still"><img src="img/misc/fabricator.png" alt=""></div></div>
 <div class="rows"><div><span>Mods</span><b>%(nmods)d</b></div><div><span>Mod cost</span><b>1 part + 3 scrap</b></div><div><span>Combos</span><b>%(ncombos)d</b></div><div><span>Weapons</span><b>%(nweapons)d melee</b></div><div><span>Reinforced</span><b>3 levels</b></div></div></aside></div>''' % dict(
         intro=E(C.INTRO), steps=steps, examples=__import__('build2').holo_gallery(__import__('build2').T.FAB_EXAMPLES), fab=find_box(fab, by_id, root).replace('Where to find it', 'Getting a Fabricator'), mods=''.join(mod_cards),
         combos=combos, grid=weapons_grid, reinforce=E(C.REINFORCE), levels=levels, wrench=E(C.WRENCH),
         nmods=len(mods['mods']), ncombos=len(mods['signatures']), nweapons=len([k for k in mods['moddable'] if k in wid]))
-    write(rel, layout(rel, 'Weapon mods & Fabricator', body, 'mods'))
+    scripts = '<script src="vendor/three.js"></script><script src="models/fabricator.js"></script><script src="js/viewer.js"></script><script>WikiViewer.mount("fabricator");</script>'
+    write(rel, layout(rel, 'Weapon mods & Fabricator', body, 'mods', scripts))
 
 
 # ------------------------------------------------------------------------------------------------ home + soon pages

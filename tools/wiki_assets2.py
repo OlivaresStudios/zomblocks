@@ -98,7 +98,29 @@ def holo_screen(card, status, k=2):
     return img.resize((img.width * k, img.height * k), Image.NEAREST)
 
 
+def fabricator_bundle(geos, anims):
+    """the bench + its amber hologram (Electric card, READY, a katana turning), as in game: panel 1.45 blocks above"""
+    ent = W.CLIENT[W.NS + 'fabricator']['desc']
+    panel = W.CLIENT[W.NS + 'fabricator_panel']['desc']
+    clip = {'loop': True, 'animation_length': 8, 'bones': {}}
+    for key in ('float', 'holo'):
+        clip['bones'].update(json.loads(json.dumps(anims.get(panel['animations'][key], {}).get('bones', {}))))
+    if 'holo' in clip['bones']:
+        clip['bones']['holo']['scale'] = 0.417                         # the katana's size on the panel (its weapon index)
+    up = [0, 1.45 * 16, 0]
+
+    def layer(geo_key, tex):
+        return dict(geo=geo_doc(geos[panel['geometry'][geo_key]]), texture=data_uri(os.path.join(W.RP, tex + '.png')),
+                    offset=up, additive=True, anim=clip)
+    d = 'textures/entity/olivares_zombie/fabricator/'
+    return dict(geo=geo_doc(geos[ent['geometry']['default']]), textures=[data_uri(os.path.join(W.RP, ent['textures']['default'] + '.png'))],
+                anims={'bench': anims.get(ent['animations']['bench'], {})}, view=dict(yaw=-0.45, pitch=0.12, zoom=1.05),
+                layers=[layer('card', d + 'card_0'), layer('status', d + 'status_1'), layer('h3', d + 'holo_katana')])
+
+
 def build(out, armor, furniture, containers, renders=True):
+    g_, a_ = W.geometries(), W.animations()
+    write_bundle(out, 'fabricator', fabricator_bundle(g_, a_))
     for name, (card, status) in HOLO_EXAMPLES.items():
         save(holo_screen(card, status), os.path.join(out, 'img', 'holo', name + '.png'))
     geos, anims = W.geometries(), W.animations()

@@ -181,7 +181,7 @@
 	// ------------------------------------------------------------------ viewer
 	function Viewer(el, bundle) {
 		var self = this;
-		this.el = el; this.bundle = bundle; this.t = 0; this.zoom = 1;
+		this.el = el; this.bundle = bundle; this.t = 0; this.zoom = (bundle.view && bundle.view.zoom) || 1;
 		this.yaw = bundle.view ? bundle.view.yaw : -0.5; this.pitch = bundle.view ? bundle.view.pitch : 0.18;
 		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -198,8 +198,14 @@
 		// extra models drawn with it (armor pieces worn by a survivor): same bone names, same animations
 		this.layers = (bundle.layers || []).map(function (l) {
 			var m = buildModel(l.geo, texture(l.texture));
+			if (l.additive) {                                  // holograms: black = nothing, colours add up
+				m.material.transparent = true; m.material.alphaTest = 0; m.material.depthWrite = false;
+				m.material.blending = THREE.AdditiveBlending;
+			}
+			if (l.offset) m.root.position.set(-l.offset[0], l.offset[1], l.offset[2]);
+			m.clip = l.anim || null;
 			self.scene.add(m.root);
-			pose(m, null, 0);
+			pose(m, m.clip, 0);
 			return m;
 		});
 		var box = new THREE.Box3().setFromObject(this.model.root);
@@ -240,8 +246,10 @@
 		if (this.clip) {
 			var ct = clipTime(this.clip, this.t), clip = this.clip;
 			pose(this.model, clip, ct);
-			this.layers.forEach(function (m) { pose(m, clip, ct); });
+			this.layers.forEach(function (m) { if (!m.clip) pose(m, clip, ct); });
 		}
+		var t = this.t;
+		this.layers.forEach(function (m) { if (m.clip) pose(m, m.clip, clipTime(m.clip, t)); });
 		var w = this.el.clientWidth || 1, h = this.el.clientHeight || 1;
 		if (this._w !== w || this._h !== h) { this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this._w = w; this._h = h; }
 		var dist = this.radius / Math.tan(this.camera.fov * D2R / 2) * this.zoom;
