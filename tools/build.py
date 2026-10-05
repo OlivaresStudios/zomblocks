@@ -29,9 +29,9 @@ SECTIONS = [
     ('Gear', [('weapons/index', 'Weapons', 'img/items/baseball_bat.png', 43), ('mods', 'Weapon mods & Fabricator', 'img/items/electric_cable.png', None),
               ('armor/index', 'Armor sets', 'img/items/biker_chest.png', 12), ('food', 'Food & medical', 'img/items/first_aid_kit.png', None),
               ('gear', 'Survival gear', 'img/items/flashlight.png', None)]),
-    ('People', [('traders', 'Traders', 'img/items/scrap.png', None), ('allies', 'Allies', 'img/items/whistle.png', None)]),
-    ('World', [('buggy', 'Rusty Buggy', 'img/items/rusty_buggy.png', None), ('world', 'Loot & containers', 'img/eggs/toolbox.png', None),
-               ('furniture', 'Furniture', 'img/eggs/armchair.png', None), ('achievements', 'Achievements', 'img/items/lucky_coin.png', None)]),
+    ('People', [('traders', 'Traders', 'img/items/scrap.png', 8), ('allies', 'Allies', 'img/items/whistle.png', None)]),
+    ('World', [('buggy', 'Rusty Buggy', 'img/items/rusty_buggy.png', None), ('world', 'Loot & world', 'img/eggs/toolbox.png', None),
+               ('furniture', 'Furniture', 'img/eggs/armchair.png', 17), ('achievements', 'Achievements', 'img/items/lucky_coin.png', 23)]),
 ]
 # what the coming sections will hold (shown on their "coming soon" page)
 PLANNED = {
@@ -53,7 +53,7 @@ PLANNED = {
     'furniture': ['The 17 pieces of furniture', 'Carrying, breaking and what they drop'],
     'achievements': ['The 23 achievements and how to get each one'],
 }
-BUILT = {'index', 'zombies/index', 'bosses/index', 'weapons/index', 'mods'}
+BUILT = {slug for _g, items in SECTIONS for slug, *_rest in items}           # every section is built now
 
 # animation buttons of the boss pages (key -> label) when the attack list order does not match the animations
 BOSS_ANIM_LABELS = {'zombie_mega_mascot': {'attack1': 'Belly bump', 'attack2': 'Bounce', 'attack3': 'Deflate', 'attack4': 'Call the team'}}
@@ -123,6 +123,8 @@ def card(href, img, title, sub, count=None, soon=False, attrs=''):
 
 
 def item_row(root, item_id, label, right):
+    if item_id.startswith('minecraft:'):                                  # vanilla item: no icon of ours
+        return '<div class="item"><span style="width:32px;flex:none"></span>%s<span>%s</span></div>' % (E(label), E(right))
     icon = item_id.split(':')[-1]
     return '<div class="item"><img src="%simg/items/%s.png" alt="" onerror="this.style.visibility=\'hidden\'">%s<span>%s</span></div>' % (root, icon, E(label), E(right))
 
@@ -306,7 +308,7 @@ KIND_TEXT = {'Melee': 'Melee weapon', 'Ranged': 'Ranged weapon', 'Spray': 'Spray
 
 
 def pct(p):
-    return ('%.1f%%' % (p * 100)) if p < 0.1 else '%d%%' % round(p * 100)
+    return ('%.1f%%' % (p * 100)) if p < 0.0995 else '%d%%' % round(p * 100)
 
 
 def find_box(find, by_id, root):
@@ -478,9 +480,9 @@ def home(zs, by_id, counts):
 <div class="art"><img class="bar pix" src="img/bossbars/%(hero)s.png" alt=""><a class="who" href="%(hero_url)s"><img src="%(hero_img)s" alt="%(hero_name)s"></a></div></section>
 <div class="sec"><h2>Browse the outbreak</h2><div class="cards">%(browse)s</div></div>
 <div class="sec"><h2>New here? Start with these</h2><div class="guides">
-<a class="guide" href="guides/first-night.html"><span class="step">STEP 1 &middot; SOON</span><b>Your first night</b><p>The guidebook, your first weapon, where to find scrap and how not to get bitten.</p></a>
-<a class="guide" href="infection.html"><span class="step">STEP 2 &middot; SOON</span><b>Infection, explained</b><p>The 4 stages, what each cure really does, and how to read the monitor next to your hand.</p></a>
-<a class="guide" href="traders.html"><span class="step">STEP 3 &middot; SOON</span><b>Scrap economy</b><p>What every trader sells, how their stock is rolled, and what is worth your scrap.</p></a></div></div>
+<a class="guide" href="guides/first-night.html"><span class="step">STEP 1</span><b>Your first night</b><p>The guidebook, your first weapon, where to find scrap and how not to get bitten.</p></a>
+<a class="guide" href="infection.html"><span class="step">STEP 2</span><b>Infection, explained</b><p>The 4 stages, what each cure really does, and how to read the monitor next to your hand.</p></a>
+<a class="guide" href="traders.html"><span class="step">STEP 3</span><b>Scrap economy</b><p>What every trader sells, how their stock is rolled, and what is worth your scrap.</p></a></div></div>
 <div class="sec"><h2>The 8 bosses</h2><div class="bossrow">%(boss_row)s</div></div>''' % dict(
         counts, hero=hero['id'], hero_url=zurl(hero), hero_img=zimg(hero), hero_name=E(hero['name']), browse=browse, boss_row=boss_row)
     write('index.html', layout('index.html', 'Home', body, 'index'))
@@ -500,7 +502,7 @@ def soon_pages():
             write(rel, layout(rel, name, body, slug))
 
 
-def search_index(zs, ws=()):
+def search_index(zs, ws=(), extra=()):
     entries = []
     for z in zs:
         entries.append(dict(title=z['name'], url=zurl(z), kind='boss' if z['kind'] == 'boss' else 'zombie', icon='img/eggs/%s.png' % z['id'],
@@ -508,6 +510,7 @@ def search_index(zs, ws=()):
     for w in ws:
         entries.append(dict(title=w['name'], url=wurl(w), kind='weapon', icon='img/items/%s.png' % w['id'],
                             keys=' '.join([w['kind'], w['special'], w['rarity']])))
+    entries += list(extra)
     for group, items in SECTIONS:
         for slug, name, icon, _c in items:
             entries.append(dict(title=name, url=url(slug), kind='section' if slug in BUILT else 'soon', icon=icon, keys=group))
@@ -533,13 +536,32 @@ def main():
         weapon_page(w, ws, by_id, mods)
     weapon_list(ws)
     mods_page(ws, mods, finder, by_id)
+    import build2
+    import wiki_assets2 as A2
+    import wiki_data2 as W2
+    me = sys.modules[__name__]
+    sets = W2.armor_sets_full(finder)
+    furn = W2.furniture()
+    A2.build(OUT, sets, furn, W2.containers()[0], renders=not fast)
+    build2.armor_pages(me, sets, by_id, finder)
+    build2.food_page(me, finder, by_id)
+    build2.gear_page(me, finder, by_id)
+    build2.infection_page(me, zs, by_id)
+    build2.traders_page(me)
+    build2.allies_page(me)
+    build2.buggy_page(me, finder, by_id)
+    build2.world_page(me)
+    build2.furniture_pages(me, furn)
+    build2.achievements_page(me)
+    build2.guide_page(me)
+    extra = build2.search_entries(sets, furn)
     for z in zs:
         (boss_page(z, by_id) if z['kind'] == 'boss' else zombie_page(z, by_id, zs))
     zombie_list(zs)
     boss_list([z for z in zs if z['kind'] == 'boss'])
     home(zs, by_id, counts)
     soon_pages()
-    search_index(zs, ws)
+    search_index(zs, ws, extra)
     print('wiki -> %s (%d zombie pages, %d boss pages, %d weapon pages)' % (OUT, sum(z['kind'] == 'zombie' for z in zs), sum(z['kind'] == 'boss' for z in zs), len(ws)))
 
 

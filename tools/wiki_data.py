@@ -197,16 +197,40 @@ def braced(text, start):
     return text[start:]
 
 
+def ts_constants():
+    """'Class.NAME' -> 'olivares_zombie:...' for the static string constants of every script (indirect type ids)"""
+    out = {}
+    for src in TS.values():
+        for c in re.finditer(r'export (?:abstract )?class (\w+)', src):
+            body = braced(src, src.index('{', c.end()))
+            for k, v in re.findall(r'static readonly (\w+) = "(olivares_zombie:\w+)"', body):
+                out['%s.%s' % (c.group(1), k)] = v
+    return out
+
+
+TS_CONSTANTS = ts_constants()
+
+
+def class_type_id(body):
+    """the zombie id a class is for: typeId = "olivares_zombie:x" or typeId = Some.CONSTANT"""
+    m = re.search(r'typeId = "olivares_zombie:(\w+)"', body)
+    if m:
+        return m.group(1)
+    m = re.search(r'typeId = (\w+\.\w+);', body)
+    return TS_CONSTANTS.get(m.group(1), '').split(':')[-1] or None if m else None
+
+
 def zombie_classes():
     """typeId -> dict(bite, attacks=[dict(min, max, ranged, damage=[...])]) parsed from src/zombies/types/*.ts"""
     raw = {}
     for f, src in TS.items():
         if os.sep + 'types' + os.sep not in f:
             continue
-        for m in re.finditer(r'export class (\w+) extends (\w+)', src):
+        for m in re.finditer(r'(?:export )?(?:abstract )?class (\w+) extends (\w+)', src):
             body = braced(src, src.index('{', m.end()))
-            tid = re.search(r'typeId = "olivares_zombie:(\w+)"', body)
+            tid = class_type_id(body)
             bite = re.search(r'biteChance = ([\d.]+)', body)
+            sev = re.search(r'biteSeverity = (\d+)', body)
             attacks = []
             for a in re.finditer(r'new ZombieAttack\(', body):
                 block = braced(body, a.end() - 1)
@@ -215,18 +239,19 @@ def zombie_classes():
                 attacks.append(dict(min=float(mn.group(1)) if mn else 0.0, max=float(mx.group(1)) if mx else None,
                                     ranged=bool(mn) or 'requiresSight: true' in block,
                                     damage=[int(float(d)) for d in re.findall(r'damage: ([\d.]+)', block)]))
-            raw[m.group(1)] = dict(parent=m.group(2), tid=tid.group(1) if tid else None,
-                                   bite=float(bite.group(1)) if bite else None, attacks=attacks)
+            raw[m.group(1)] = dict(parent=m.group(2), tid=tid, bite=float(bite.group(1)) if bite else None, attacks=attacks,
+                                   severity=int(sev.group(1)) if sev else None)
     out = {}
     for name, c in raw.items():
         if not c['tid']:
             continue
-        bite, attacks, p = c['bite'], c['attacks'], c['parent']
-        while (bite is None or not attacks) and p in raw:            # inherited from the parent zombie class
+        bite, attacks, sev, p = c['bite'], c['attacks'], c['severity'], c['parent']
+        while (bite is None or not attacks or sev is None) and p in raw:   # inherited from the parent zombie class
             bite = raw[p]['bite'] if bite is None else bite
+            sev = raw[p]['severity'] if sev is None else sev
             attacks = attacks or raw[p]['attacks']
             p = raw[p]['parent']
-        out[c['tid']] = dict(bite=0.1 if bite is None else bite, attacks=attacks)
+        out[c['tid']] = dict(bite=0.1 if bite is None else bite, attacks=attacks, severity=15 if sev is None else sev)
     return out
 
 
@@ -247,7 +272,7 @@ def zombies():
             ce = CLIENT[NS + zid]['desc']
             skins = [ce['textures'][k] for k in sorted(ce['textures']) if k.startswith('skin')] or [list(ce['textures'].values())[0]]
             table = comps.get('minecraft:loot', {}).get('table')
-            cls = classes.get(zid, dict(bite=0.1, attacks=[]))
+            cls = classes.get(zid, dict(bite=0.1, attacks=[], severity=15))
             out.append(dict(
                 id=zid, kind=kind, name=z['name'], threat=z['threat'], damage=z['damage'], special=z['special'],
                 text=z['text'], tip=z['tip'], tip_title=z.get('tip_title', 'Survival tip'), extra=D.SUMMONS.get(zid, ''),
@@ -257,7 +282,7 @@ def zombies():
                 scale=comps.get('minecraft:scale', {}).get('value', 1),
                 skins=skins, geometry=ce['geometry']['default'],
                 anims={k: v for k, v in ce.get('animations', {}).items() if v.startswith('animation.')},
-                bite=cls['bite'], attacks=cls['attacks'],
+                bite=cls['bite'], attacks=cls['attacks'], severity=cls['severity'],
                 drops=[] if kind == 'boss' else loot_table(table) if table else [],
                 extra_drops=extra.get(zid, []),
                 boss=team_of.get(zid), team=teams.get(zid, []),
