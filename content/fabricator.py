@@ -16,7 +16,11 @@ HOW_TO = [
     ('Change or remove', 'A weapon holds one mod: a new one replaces the old one. Removing a mod is free, but the parts '
                          'are lost.'),
     ('Build blocks', 'Right click the workbench with anything else in your hand: the cards are blocks made from parts '
-                     '(Glue Puddle, Sprinkler, Electric Fence). Sneak + punch builds them and they go to your inventory.'),
+                     '(Glue Puddle, Sprinkler, Electric Fence, Barbed Wire, bombs, flares, shurikens). Sneak + punch builds them and they '
+                     'go to your inventory.'),
+    ('Shuriken mods', 'Right click it with shurikens in your hand: Electric, Toxic or Fire for up to 8 shurikens of the '
+                      'stack (1 part + 2 scrap). Every hit shocks 2 s, poisons 5 s or sets on fire 4 s; a shuriken you '
+                      'pick up again keeps its mod.'),
     ('Close', 'The panel closes when you walk away (6 blocks) or put the weapon away.'),
 ]
 
