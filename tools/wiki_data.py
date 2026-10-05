@@ -482,7 +482,14 @@ def mod_catalog():
                   for m in re.finditer(r'\{ weapon: "olivares_zombie:(\w+)", mod: (\d+), text: "([^"]+)" \}', src)]
     costs = [(int(a), int(b)) for a, b in re.findall(r'\{ tape: (\d+), scrap: (\d+) \}', src)]
     bonus = float(re.search(r'REINFORCE_BONUS = ([\d.]+)', src).group(1))
-    return dict(mods=mods, moddable=moddable, signatures=signatures, reinforce=costs, reinforce_bonus=bonus)
+    # shuriken mods (Fabricator, shurikens in hand; src/weapons/mods/ShurikenMods.ts): every hit, script only
+    fab = read(os.path.join(SRC, 'workshop', 'FabricatorCatalog.ts'))
+    ids = [int(x) for x in re.search(r'FAB_SHURIKEN_MODS = \[([\d, ]+)\]', fab).group(1).split(',')]
+    effects = dict(re.findall(r'\[ModId\.(\w+)\]: "([^"]+)"', read(os.path.join(SRC, 'weapons', 'mods', 'ShurikenMods.ts'))))
+    shuriken = dict(mods=[dict(m, effect=effects.get(m['name'], m['effect'])) for m in mods if m['id'] in ids],
+                    batch=int(re.search(r'FAB_SHURIKEN_BATCH = (\d+)', fab).group(1)),
+                    scrap=int(re.search(r'FAB_SHURIKEN_SCRAP = (\d+)', fab).group(1)))
+    return dict(mods=mods, moddable=moddable, signatures=signatures, reinforce=costs, reinforce_bonus=bonus, shuriken=shuriken)
 
 
 def weapons(finder):

@@ -360,6 +360,12 @@ def weapon_page(w, ws, by_id, mods):
                 root, m['part'].split(':')[1], E(m['name']), E(m['effect']), extra, E(m['part_name']), m['scrap']))
         modbox = '<div class="box"><h3>Weapon mods</h3><p>The <a href="../mods.html">Fabricator</a> can put one of these on it. Try them on the 3D model.</p>%s</div>' % ''.join(cards)
         buttons = '<button data-mod="" class="on">No mod</button>' + ''.join('<button data-mod="%s">%s</button>' % (m['letter'], E(m['name'])) for m in mods['mods'])
+    if w['id'] == 'shuriken':
+        sm = mods['shuriken']
+        chips += '<a class="chip boss" href="../mods.html">ACCEPTS MODS</a>'
+        cards = ''.join('<div class="item" style="align-items:flex-start"><img src="%simg/items/%s.png" alt=""><div><b>%s Shuriken</b><p style="margin:2px 0 0">%s</p></div><span>%s + %d scrap</span></div>' % (
+            root, m['part'].split(':')[1], E(m['name']), E(m['effect']), E(m['part_name']), sm['scrap']) for m in sm['mods'])
+        modbox = '<div class="box"><h3>Shuriken mods</h3><p>Right click the <a href="../mods.html">Fabricator</a> with shurikens in hand: the mod goes on up to %d shurikens of the stack and works on every hit. The model does not change; the name and the description do, and a shuriken you pick up again keeps its mod.</p>%s</div>' % (sm['batch'], cards)
     same = [o for o in ws if o['kind'] == w['kind'] and o['id'] != w['id']][:8]
     see = ''.join('<a href="%s%s"><img src="%simg/w/%s.png" alt="" loading="lazy"><b>%s</b></a>' % (root, wurl(o), root, o['id'], E(o['name'])) for o in same)
     rows = [('Type', E(w['kind'])), ('Damage', E(w['damage'])), ('Uses', E(w['uses'])), ('Special', E(w['special'])), ('Rarity', w['rarity'])]
@@ -444,6 +450,9 @@ def mods_page(ws, mods, finder, by_id):
         mod_cards.append('<div class="box"><h3><img class="pix" src="img/items/%s.png" alt="" style="width:28px;height:28px">%s mod</h3><p><b style="color:var(--text)">Effect:</b> %s. %s</p><p><b style="color:var(--text)">Cost:</b> 1 %s + %d scrap at the Fabricator.</p>%s</div>' % (
             m['part'].split(':')[1], E(m['name']), E(m['effect']), E(note), E(m['part_name']), m['scrap'], find_box(f, by_id, root).replace('<div class="box"><h3>Where to find it</h3>', '<div><h4 class="findh" style="margin-top:10px">Where to find the %s</h4>' % E(m['part_name']), 1)))
     weapons_grid = ''.join('<a href="%s"><img src="img/w/%s.png" alt="" loading="lazy"><b>%s</b></a>' % (wurl(wid[k]), k, E(wid[k]['name'])) for k in mods['moddable'] if k in wid)
+    if 'shuriken' in wid:
+        weapons_grid += '<a href="%s"><img src="img/w/shuriken.png" alt="" loading="lazy"><b>Shuriken</b><span style="display:block;color:var(--yellow);font-size:11px;padding:0 6px">%s only</span></a>' % (
+            wurl(wid['shuriken']), E(', '.join(m['name'] for m in mods['shuriken']['mods'])))
     mod_by_id = {m['id']: m for m in mods['mods']}
     combos = ''.join('<a href="%s"><img src="img/w/%s_%s.png" alt="" loading="lazy" style="height:110px"><b>%s + %s</b><span style="display:block;color:var(--yellow);font-size:11px;padding:0 6px">%s</span></a>' % (
         wurl(wid[s['weapon']]), s['weapon'], mod_by_id[s['mod']]['letter'], E(wid[s['weapon']]['name']), E(mod_by_id[s['mod']]['name']), E(s['text'])) for s in mods['signatures'] if s['weapon'] in wid)
@@ -462,10 +471,10 @@ def mods_page(ws, mods, finder, by_id):
 <div class="sec"><h2>Reinforced weapons</h2><div class="box"><p>%(reinforce)s</p>%(levels)s</div></div>
 <div class="tip"><b>REPAIRS</b>%(wrench)s</div>
 </div><aside class="info"><div class="viewer" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span><div class="still"><img src="img/misc/fabricator.png" alt=""></div></div>
-<div class="rows"><div><span>Mods</span><b>%(nmods)d</b></div><div><span>Mod cost</span><b>1 part + 3 scrap</b></div><div><span>Combos</span><b>%(ncombos)d</b></div><div><span>Weapons</span><b>%(nweapons)d melee</b></div><div><span>Reinforced</span><b>3 levels</b></div></div></aside></div>''' % dict(
+<div class="rows"><div><span>Mods</span><b>%(nmods)d</b></div><div><span>Mod cost</span><b>1 part + 3 scrap</b></div><div><span>Combos</span><b>%(ncombos)d</b></div><div><span>Weapons</span><b>%(nweapons)d</b></div><div><span>Reinforced</span><b>3 levels</b></div></div></aside></div>''' % dict(
         intro=E(C.INTRO), steps=steps, examples=__import__('build2').holo_gallery(__import__('build2').T.FAB_EXAMPLES), fab=find_box(fab, by_id, root).replace('Where to find it', 'Getting a Fabricator'), mods=''.join(mod_cards),
         combos=combos, grid=weapons_grid, blocks=build_rows(), reinforce=E(C.REINFORCE), levels=levels, wrench=E(C.WRENCH),
-        nmods=len(mods['mods']), ncombos=len(mods['signatures']), nweapons=len([k for k in mods['moddable'] if k in wid]))
+        nmods=len(mods['mods']), ncombos=len(mods['signatures']), nweapons=len([k for k in mods['moddable'] if k in wid]) + ('shuriken' in wid))
     scripts = '<script src="vendor/three.js"></script><script src="models/fabricator.js"></script><script src="js/viewer.js"></script><script>WikiViewer.mount("fabricator");</script>'
     write(rel, layout(rel, 'Weapon mods & Fabricator', body, 'mods', scripts))
 
