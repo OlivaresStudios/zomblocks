@@ -243,8 +243,8 @@ def zombie_list(zs):
     cards = []
     for z in [z for z in zs if z['kind'] == 'zombie']:
         sub = '%s<span>%d &#10084;</span>' % (skulls(z['threat']), z['health'])
-        cards.append('<a class="card" href="%s" data-name="%s" data-threat="%d" data-health="%d" data-tags="%s"><div class="pic"><img src="../%s" alt="" loading="lazy"></div><h3>%s</h3><div class="meta">%s</div></a>' % (
-            z['id'] + '.html', E(z['name']), z['threat'], z['health'], ' '.join(tags_of(z)), zimg(z), E(z['name']), sub))
+        cards.append('<a class="card" href="%s" data-name="%s" data-threat="%d" data-health="%d" data-tags="%s" data-model="%s"><div class="pic"><img src="../%s" alt="" loading="lazy"></div><h3>%s</h3><div class="meta">%s</div></a>' % (
+            z['id'] + '.html', E(z['name']), z['threat'], z['health'], ' '.join(tags_of(z)), z['id'], zimg(z), E(z['name']), sub))
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <b>Zombies</b></div>
 <div class="pagehead"><div><h1>Zombies</h1><p>%d kinds of infected, each in 3 variants. Threat goes from 1 (a nuisance) to 5 (run). Bosses have <a href="../bosses/index.html">their own page</a>.</p></div></div>
 <div class="filters"><input id="ftext" type="search" placeholder="Filter by name..."><span class="lbl">Threat</span>%s<span class="lbl">Show</span>
@@ -253,7 +253,8 @@ def zombie_list(zs):
 <span style="color:var(--muted);font-size:12px"><b id="fcount" style="color:var(--text)"></b> shown</span></div>
 <div class="cards" data-filter-grid>%s</div><p class="empty" id="fempty" style="display:none">No zombie matches these filters.</p>''' % (
         len(cards), ''.join('<button data-threat-btn="%d">%d</button>' % (i, i) for i in range(1, 6)), ''.join(cards))
-    write(rel, layout(rel, 'Zombies', body, 'zombies/index'))
+    scripts = '<script src="../vendor/three.js"></script><script src="../js/viewer.js"></script><script>WikiViewer.hoverDeath("../");</script>'
+    write(rel, layout(rel, 'Zombies', body, 'zombies/index', scripts))
 
 
 # ------------------------------------------------------------------------------------------------ boss pages
@@ -464,12 +465,12 @@ def mods_page(ws, mods, finder, by_id):
 <div class="entry"><div><div class="title"><h1>Weapon mods &amp; Fabricator</h1></div><p class="lead">%(intro)s</p>
 <div class="box"><h3>How to use the Fabricator</h3>%(steps)s<h3 style="margin-top:14px">What the panel shows</h3>%(examples)s</div>
 %(fab)s
-<div class="sec"><h2>The 5 mods</h2>%(mods)s</div>
-<div class="sec"><h2>Blocks you can build</h2><p style="color:var(--soft)">Right click the workbench without a melee weapon in hand.</p><div class="box">%(blocks)s</div></div>
 <div class="sec"><h2>Signature combos</h2><p style="color:var(--soft)">These weapon + mod pairs get a bonus of their own.</p><div class="mini">%(combos)s</div></div>
 <div class="sec"><h2>Weapons that accept a mod</h2><div class="mini">%(grid)s</div></div>
 <div class="sec"><h2>Reinforced weapons</h2><div class="box"><p>%(reinforce)s</p>%(levels)s</div></div>
 <div class="tip"><b>REPAIRS</b>%(wrench)s</div>
+<div class="sec"><h2>The 5 mods</h2>%(mods)s</div>
+<div class="sec"><h2>Blocks you can build</h2><p style="color:var(--soft)">Right click the workbench without a melee weapon in hand.</p><div class="box">%(blocks)s</div></div>
 </div><aside class="info"><div class="viewer" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span><div class="still"><img src="img/misc/fabricator.png" alt=""></div></div>
 <div class="rows"><div><span>Mods</span><b>%(nmods)d</b></div><div><span>Mod cost</span><b>1 part + 3 scrap</b></div><div><span>Combos</span><b>%(ncombos)d</b></div><div><span>Weapons</span><b>%(nweapons)d</b></div><div><span>Reinforced</span><b>3 levels</b></div></div></aside></div>''' % dict(
         intro=E(C.INTRO), steps=steps, examples=__import__('build2').holo_gallery(__import__('build2').T.FAB_EXAMPLES), fab=find_box(fab, by_id, root).replace('Where to find it', 'Getting a Fabricator'), mods=''.join(mod_cards),
