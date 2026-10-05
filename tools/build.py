@@ -154,8 +154,8 @@ def infobox(z, root, rows):
     buttons, _first = anim_buttons(z)
     boss = z['kind'] == 'boss'
     return '''<aside class="info"><div class="viewer%s" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span>
-<div class="still"><img src="%s%s" alt="%s"></div></div><div class="anims">%s</div><div class="rows">%s</div></aside>''' % (
-        ' boss' if boss else '', root, zimg(z), E(z['name']), buttons, ''.join('<div><span>%s</span><b>%s</b></div>' % r for r in rows))
+<div class="still"><img src="%s%s" alt="%s"></div></div><div class="rows">%s</div></aside>''' % (
+        ' boss' if boss else '', root, zimg(z), E(z['name']), ''.join('<div><span>%s</span><b>%s</b></div>' % r for r in rows))
 
 
 def infection_text(z):
@@ -164,7 +164,7 @@ def infection_text(z):
 
 def viewer_scripts(root, z):
     return ('<script src="%svendor/three.js"></script><script src="%smodels/%s.js"></script><script src="%sjs/viewer.js"></script>'
-            '<script>WikiViewer.mount(%s);</script>' % (root, root, z['id'], root, json.dumps(z['id'])))
+            '<script>WikiViewer.mount(%s, {cycle: true});</script>' % (root, root, z['id'], root, json.dumps(z['id'])))
 
 
 # ------------------------------------------------------------------------------------------------ zombie pages

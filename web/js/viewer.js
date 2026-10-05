@@ -240,9 +240,26 @@
 			if (name.indexOf("mod_") === 0) bones[name].group.visible = !!letter && name.indexOf("mod_" + letter) === 0;
 		});
 	};
+	/** zombie pages: walk for a few strides, then the death, held a moment, and again */
+	Viewer.prototype.cycle = function () {
+		var anims = this.bundle.anims, keys = Object.keys(anims);
+		var death = keys.filter(function (k) { return k.indexOf("death") === 0; }).sort()[0];
+		var walk = anims.walk ? "walk" : keys.filter(function (k) { return k !== death; })[0];
+		this.steps = [];
+		if (walk) { var wl = anims[walk].animation_length || 1; this.steps.push({ key: walk, dur: Math.max(3, wl * Math.ceil(3 / wl)) }); }
+		if (death) this.steps.push({ key: death, dur: (anims[death].animation_length || 2) + 1.2, once: true });
+		this.step = 0; this.stepT = 0;
+		if (this.steps.length) this.setAnim(this.steps[0].key);
+	};
 	Viewer.prototype.frame = function () {
 		var dt = Math.min(0.1, this.clock.getDelta());
 		this.t += dt;
+		if (this.steps && this.steps.length) {
+			this.stepT += dt;
+			var st = this.steps[this.step];
+			if (this.stepT >= st.dur) { this.step = (this.step + 1) % this.steps.length; this.stepT = 0; this.setAnim(this.steps[this.step].key); st = this.steps[this.step]; }
+			if (st.once) this.t = Math.min(this.stepT, this.clip ? (this.clip.animation_length || 2) : 0);
+		}
 		if (this.clip) {
 			var ct = clipTime(this.clip, this.t), clip = this.clip;
 			pose(this.model, clip, ct);
@@ -261,12 +278,13 @@
 
 	// ------------------------------------------------------------------ page wiring
 	window.WikiViewer = {
-		mount: function (id) {
+		mount: function (id, options) {
 			var el = document.getElementById("viewer");
 			var bundle = window.WIKI_MODELS && window.WIKI_MODELS[id];
 			if (!el || !bundle || !THREE) return;
 			var v;
 			try { v = new Viewer(el, bundle); } catch (err) { return; }
+			if (options && options.cycle) v.cycle();
 			document.querySelectorAll("[data-anim]").forEach(function (b) {
 				b.addEventListener("click", function () {
 					document.querySelectorAll("[data-anim]").forEach(function (o) { o.classList.toggle("on", o === b); });
