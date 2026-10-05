@@ -181,7 +181,8 @@
 	// ------------------------------------------------------------------ viewer
 	function Viewer(el, bundle) {
 		var self = this;
-		this.el = el; this.bundle = bundle; this.t = 0; this.yaw = -0.5; this.pitch = 0.18; this.zoom = 1;
+		this.el = el; this.bundle = bundle; this.t = 0; this.zoom = 1;
+		this.yaw = bundle.view ? bundle.view.yaw : -0.5; this.pitch = bundle.view ? bundle.view.pitch : 0.18;
 		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 		this.renderer.setClearColor(0x000000, 0);
@@ -200,6 +201,7 @@
 		var shadow = new THREE.Mesh(new THREE.CircleGeometry(Math.max(size.x, size.z) * 0.75, 40), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 }));
 		shadow.rotation.x = -Math.PI / 2; shadow.position.set(this.center.x, box.min.y + 0.05, this.center.z); this.scene.add(shadow);
 		this.setAnim(Object.keys(bundle.anims)[0]);
+		this.setMod("");
 		// drag to turn, wheel to zoom
 		var drag = null;
 		el.addEventListener("pointerdown", function (e) { drag = { x: e.clientX, y: e.clientY }; el.setPointerCapture(e.pointerId); el.style.cursor = "grabbing"; });
@@ -216,6 +218,13 @@
 	}
 	Viewer.prototype.setAnim = function (key) { this.clip = this.bundle.anims[key] || null; this.t = 0; };
 	Viewer.prototype.setSkin = function (i) { if (this.textures[i]) this.model.material.map = this.textures[i]; };
+	/** weapon mods: the decorations are hidden bones mod_<letter>... ("" = no mod) */
+	Viewer.prototype.setMod = function (letter) {
+		var bones = this.model.bones;
+		Object.keys(bones).forEach(function (name) {
+			if (name.indexOf("mod_") === 0) bones[name].group.visible = !!letter && name.indexOf("mod_" + letter) === 0;
+		});
+	};
 	Viewer.prototype.frame = function () {
 		var dt = Math.min(0.1, this.clock.getDelta());
 		this.t += dt;
@@ -241,6 +250,12 @@
 				b.addEventListener("click", function () {
 					document.querySelectorAll("[data-anim]").forEach(function (o) { o.classList.toggle("on", o === b); });
 					v.setAnim(b.getAttribute("data-anim"));
+				});
+			});
+			document.querySelectorAll("[data-mod]").forEach(function (b) {
+				b.addEventListener("click", function () {
+					document.querySelectorAll("[data-mod]").forEach(function (o) { o.classList.toggle("on", o === b); });
+					v.setMod(b.getAttribute("data-mod"));
 				});
 			});
 			document.querySelectorAll("[data-skin]").forEach(function (f) {

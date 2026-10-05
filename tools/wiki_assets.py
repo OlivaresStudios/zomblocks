@@ -62,6 +62,65 @@ def model_bundle(z, geos, anims):
                 textures=[data_uri(os.path.join(W.RP, s + '.png')) for s in z['skins']], anims=used)
 
 
+WEAPON_FX = 'animation.olivares_zombie.weapon_mods.fx'
+
+
+def weapon_geo_tex(w):
+    """(geometry dict, texture path, render kind) of a weapon: its 3D attachable, or the entity model of thrown ones"""
+    if w['model'] == 'attachable':                       # the file itself: M.rp_model strips the mod bones
+        geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'attachables', 'olivares_zombie', w['id'] + '.geo.json'), encoding='utf-8'))
+        return geo, os.path.join(W.RP, 'textures', 'attachables', 'olivares_zombie', w['id'] + '.png')
+    name = w['model'].split(':', 1)[1]
+    geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'olivares_zombie', name + '.geo.json'), encoding='utf-8'))
+    return geo, os.path.join(W.RP, 'textures', 'entity', 'olivares_zombie', name + '.png')
+
+
+def weapon_view(w):
+    """rest pose of root_item + camera (my yaw = -python yaw, radians) like the guidebook pictures"""
+    import math
+    if w['model'] != 'attachable':
+        return {}, -math.radians(30), 0.35
+    if w['kind'] in ('Ranged', 'Spray'):
+        return {'root_item': {'rotation': [-90, 0, 0]}}, -math.radians(270), 0.1
+    return {'root_item': {'rotation': [0, 0, -30]}}, -math.radians(200), 0.18
+
+
+def weapon_render(w, box=(300, 300), mod=None):
+    if w['model'] == 'attachable':
+        geo, texdir = M.rp_model('weapon', w['id'], mod)
+        return M.weapon_render(geo, Image.open(os.path.join(texdir, w['id'] + '.png')), w['kind'], box)
+    img = M.picture(w['model'], box)
+    k = int(min(box) * 0.7 // max(img.size))                           # small thrown items: scaled up, pixels kept
+    return img.resize((img.width * k, img.height * k), Image.NEAREST) if k > 1 else img
+
+
+def weapon_bundle(w, anims):
+    geo, tex = weapon_geo_tex(w)
+    rest, yaw, pitch = weapon_view(w)
+    bones = {b['name'] for b in geo['minecraft:geometry'][0]['bones']}
+    clip = {'loop': True, 'animation_length': 4, 'bones': {}}
+    if WEAPON_FX in anims:
+        clip['bones'].update({k: v for k, v in anims[WEAPON_FX].get('bones', {}).items() if k in bones})
+    for bone, ch in rest.items():
+        clip['bones'].setdefault(bone, {}).update(ch)
+    mods = sorted({b[4] for b in bones if b.startswith('mod_') and len(b) >= 5})
+    return dict(geo=geo, textures=[data_uri(tex)], anims={'show': clip}, view=dict(yaw=yaw, pitch=pitch), mods=mods)
+
+
+def build_weapons(out, weapons, mods, renders=True):
+    anims = W.animations()
+    for w in weapons:
+        if renders:
+            save(weapon_render(w), os.path.join(out, 'img', 'w', w['id'] + '.png'))
+            if w['moddable']:
+                for m in mods['mods']:
+                    save(weapon_render(w, (240, 240), m['letter']), os.path.join(out, 'img', 'w', '%s_%s.png' % (w['id'], m['letter'])))
+        path = os.path.join(out, 'models', 'w_' + w['id'] + '.js')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as fh:
+            fh.write('(window.WIKI_MODELS = window.WIKI_MODELS || {})[%s] = %s;\n' % (json.dumps('w_' + w['id']), json.dumps(weapon_bundle(w, anims), separators=(',', ':'))))
+
+
 def three_classic(src, dst):
     """three.module.js has no import and one final export {...}: wrap it so it defines window.THREE"""
     code = open(src, encoding='utf-8').read()

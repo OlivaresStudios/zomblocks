@@ -142,6 +142,8 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding-top:16px;color:v
 .anims button.on{color:#06210f;background:var(--green);border-color:var(--green)}
 .rows{padding:6px 16px 14px}.rows div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line)}.rows div:last-child{border:0}
 .rows span{color:var(--muted)}.rows b{font-weight:600;text-align:right}
+.findh{margin:14px 0 8px;font:700 11px Inter,sans-serif;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}.findh:first-child{margin-top:0}.findh small{text-transform:none;letter-spacing:0;font-weight:500}
+.item b{font-weight:600}.item p{color:var(--soft);font-size:13px}
 .soonpage{max-width:720px}.soonpage ul{color:var(--soft)}
 
 /* phones */

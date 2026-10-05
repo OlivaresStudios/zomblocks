@@ -53,7 +53,7 @@ PLANNED = {
     'furniture': ['The 17 pieces of furniture', 'Carrying, breaking and what they drop'],
     'achievements': ['The 23 achievements and how to get each one'],
 }
-BUILT = {'index', 'zombies/index', 'bosses/index'}
+BUILT = {'index', 'zombies/index', 'bosses/index', 'weapons/index', 'mods'}
 
 # animation buttons of the boss pages (key -> label) when the attack list order does not match the animations
 BOSS_ANIM_LABELS = {'zombie_mega_mascot': {'attack1': 'Belly bump', 'attack2': 'Bounce', 'attack3': 'Deflate', 'attack4': 'Call the team'}}
@@ -299,6 +299,162 @@ def boss_list(bosses):
     write(rel, layout(rel, 'Bosses', body, 'bosses/index'))
 
 
+# ------------------------------------------------------------------------------------------------ where to find (any item)
+RARITY_CHIP = {'Common': 'green', 'Rare': 'yellow', 'OP': 'red'}
+KIND_TEXT = {'Melee': 'Melee weapon', 'Ranged': 'Ranged weapon', 'Spray': 'Spray weapon (tank)', 'Thrown': 'Thrown weapon',
+             'Gadget': 'Gadget', 'Shield': 'Shield'}
+
+
+def pct(p):
+    return ('%.1f%%' % (p * 100)) if p < 0.1 else '%d%%' % round(p * 100)
+
+
+def find_box(find, by_id, root):
+    """the 'Where to find it' block of an item page"""
+    parts = []
+    if find['traders']:
+        rows = []
+        for t in find['traders']:
+            price = ' + '.join('%d %s' % (n, W.item_name(i)) for i, n in t['barter']) if t['barter'] else '%d scrap' % t['price']
+            amount = ' (x%d)' % t['amount'] if t['amount'] > 1 else ''
+            rows.append('<div class="item"><img src="%simg/items/scrap.png" alt="">%s%s <span style="margin-left:6px;color:var(--muted)">%s &middot; %s</span><span>in stock %d%% of the time</span></div>' % (
+                root, E(price), amount, E(', '.join(t['who'])), E(t['category_name']), t['stock']))
+        parts.append('<h4 class="findh">Traders</h4>' + ''.join(rows))
+    if find['bosses']:
+        rows = ''.join('<a href="%s%s"><img src="%s%s" alt="" loading="lazy"><b>%s</b><span style="display:block;color:var(--muted);font-size:11px">%s</span></a>' % (
+            root, zurl(by_id[b]), root, zimg(by_id[b]), E(by_id[b]['name']), 'jackpot' if k == 'jackpot' else 'bonus item') for b, k in find['bosses'])
+        parts.append('<h4 class="findh">Boss loot</h4><div class="mini">%s</div>' % rows)
+    if find['loot']:
+        rows = ''.join('<div class="item"><span style="margin:0;color:var(--soft)">%s</span><span>%s</span></div>' % (E(label), pct(p)) for label, p in sorted(find['loot'], key=lambda x: -x[1]))
+        parts.append('<h4 class="findh">Containers and finds <small>(chance each time)</small></h4>' + rows)
+    if find['zombies']:
+        rows = ''.join('<a href="%s%s"><img src="%s%s" alt="" loading="lazy"><b>%s</b><span style="display:block;color:var(--muted);font-size:11px">%s</span></a>' % (
+            root, zurl(by_id[z]), root, zimg(by_id[z]), E(by_id[z]['name']), pct(c)) for z, c in find['zombies'] if z in by_id)
+        parts.append('<h4 class="findh">Dropped by</h4><div class="mini">%s</div>' % rows)
+    if find['craft']:
+        parts.append('<h4 class="findh">Craft it</h4><p>Crafting table: %s.</p>' % ', '.join('%d %s' % (n, E(W.item_name(i))) for i, n in find['craft']))
+    return '<div class="box"><h3>Where to find it</h3>%s</div>' % ''.join(parts) if parts else ''
+
+
+# ------------------------------------------------------------------------------------------------ weapons
+def wurl(w):
+    return 'weapons/%s.html' % w['id']
+
+
+def weapon_page(w, ws, by_id, mods):
+    rel = wurl(w)
+    root = '../'
+    chips = '<span class="chip grey">%s</span><span class="chip %s">%s</span>' % (E(KIND_TEXT.get(w['kind'], w['kind']).upper()), RARITY_CHIP[w['rarity']], w['rarity'].upper())
+    if w['moddable']:
+        chips += '<a class="chip boss" href="../mods.html">ACCEPTS MODS</a>'
+    modbox = ''
+    buttons = ''
+    if w['moddable']:
+        sig = {s['mod']: s['text'] for s in w['signatures']}
+        cards = []
+        for m in mods['mods']:
+            extra = '<p style="color:var(--yellow);margin:4px 0 0">Signature combo: %s</p>' % E(sig[m['id']]) if m['id'] in sig else ''
+            cards.append('<div class="item" style="align-items:flex-start"><img src="%simg/items/%s.png" alt=""><div><b>%s mod</b><p style="margin:2px 0 0">%s</p>%s</div><span>%s + %d scrap</span></div>' % (
+                root, m['part'].split(':')[1], E(m['name']), E(m['effect']), extra, E(m['part_name']), m['scrap']))
+        modbox = '<div class="box"><h3>Weapon mods</h3><p>The <a href="../mods.html">Fabricator</a> can put one of these on it. Try them on the 3D model.</p>%s</div>' % ''.join(cards)
+        buttons = '<button data-mod="" class="on">No mod</button>' + ''.join('<button data-mod="%s">%s</button>' % (m['letter'], E(m['name'])) for m in mods['mods'])
+    same = [o for o in ws if o['kind'] == w['kind'] and o['id'] != w['id']][:8]
+    see = ''.join('<a href="%s%s"><img src="%simg/w/%s.png" alt="" loading="lazy"><b>%s</b></a>' % (root, wurl(o), root, o['id'], E(o['name'])) for o in same)
+    rows = [('Type', E(w['kind'])), ('Damage', E(w['damage'])), ('Uses', E(w['uses'])), ('Special', E(w['special'])), ('Rarity', w['rarity'])]
+    if w['find']['traders']:
+        t = min(w['find']['traders'], key=lambda x: x['price'] or 999)
+        rows.append(('Price', '%d scrap' % t['price'] if t['price'] else 'barter'))
+    info = '''<aside class="info"><div class="viewer" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span>
+<div class="still"><img src="../img/w/%s.png" alt=""></div></div>%s<div class="rows">%s</div></aside>''' % (
+        w['id'], '<div class="anims">%s</div>' % buttons if buttons else '', ''.join('<div><span>%s</span><b>%s</b></div>' % r for r in rows))
+    body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <a href="index.html">Weapons</a> / <b>%(name)s</b></div>
+<div class="entry"><div><div class="title"><h1>%(name)s</h1></div><div class="title" style="margin-top:8px">%(chips)s</div>
+<p class="lead">%(text)s</p>
+<div class="tip"><b>%(tip_title)s</b>%(tip)s</div>
+%(find)s%(modbox)s
+<div class="box"><h3>Other %(kind)s weapons</h3><div class="mini">%(see)s</div></div>
+</div>%(info)s</div>''' % dict(name=E(w['name']), chips=chips, text=E(w['text']), tip_title=E(w['tip_title'].upper()), tip=E(w['tip']),
+                               find=find_box(w['find'], by_id, root), modbox=modbox, kind=E(w['kind'].lower()), see=see, info=info)
+    scripts = ('<script src="../vendor/three.js"></script><script src="../models/w_%s.js"></script><script src="../js/viewer.js"></script>'
+               '<script>WikiViewer.mount(%s);</script>' % (w['id'], json.dumps('w_' + w['id'])))
+    write(rel, layout(rel, w['name'], body, 'weapons/index', scripts))
+
+
+def num(s):
+    import re
+    m = re.match(r'\s*(\d+)', s or '')
+    return int(m.group(1)) if m else 0
+
+
+def weapon_list(ws):
+    rel = 'weapons/index.html'
+    order = ['Melee', 'Ranged', 'Spray', 'Thrown', 'Gadget', 'Shield']
+    cards = []
+    for w in ws:
+        tags = [w['kind'].lower(), w['rarity'].lower()] + (['mods'] if w['moddable'] else [])
+        cards.append('<a class="card" href="%s.html" data-name="%s" data-threat="0" data-damage="%d" data-rarity="%d" data-tags="%s"><div class="pic"><img src="../img/w/%s.png" alt="" loading="lazy"></div><h3>%s</h3><div class="meta"><span>%s &middot; %s</span><span class="chip %s" style="font-size:9px;padding:1px 6px">%s</span></div></a>' % (
+            w['id'], E(w['name']), num(w['damage']), {'Common': 1, 'Rare': 2, 'OP': 3}[w['rarity']], ' '.join(tags), w['id'], E(w['name']), E(w['kind']),
+            E(w['damage'] + (' dmg' if w['damage'].isdigit() else '')), RARITY_CHIP[w['rarity']], w['rarity'].upper()))
+    kinds = ''.join('<button data-tag-btn="%s">%s</button>' % (k.lower(), k) for k in order if any(w['kind'] == k for w in ws))
+    body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <b>Weapons</b></div>
+<div class="pagehead"><div><h1>Weapons</h1><p>%d weapons, from the baseball bat to the Vortex Launcher. Every page tells you where to find it: which trader sells it and how often, which containers hide it, which boss drops it.</p></div></div>
+<div class="filters"><input id="ftext" type="search" placeholder="Filter by name...">%s<button data-tag-btn="op">OP</button><button data-tag-btn="mods">Accepts mods</button>
+<span class="lbl">Sort</span><select id="fsort"><option value="rarity">Rarity</option><option value="damage">Damage</option><option value="name">Name</option></select>
+<span style="color:var(--muted);font-size:12px"><b id="fcount" style="color:var(--text)"></b> shown</span></div>
+<div class="cards" data-filter-grid>%s</div><p class="empty" id="fempty" style="display:none">No weapon matches these filters.</p>''' % (len(ws), kinds, ''.join(cards))
+    write(rel, layout(rel, 'Weapons', body, 'weapons/index'))
+
+
+def extra_sentences(note, effect):
+    """the guidebook sentences that add something to the effect (not 'From ...', not the same numbers again)"""
+    import re
+    digits = set(re.findall(r'\d+', effect))
+    for sentence in [x.strip() for x in note.split('.') if x.strip()]:
+        if sentence.startswith('From ') or set(re.findall(r'\d+', sentence)) <= digits:
+            continue
+        yield sentence + '.'
+
+
+def mods_page(ws, mods, finder, by_id):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('wiki_fab', os.path.join(W.WIKI, 'content', 'fabricator.py'))
+    C = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(C)
+    rel = 'mods.html'
+    root = ''
+    wid = {w['id']: w for w in ws}
+    gb = {m['name']: m for m in W.D.WEAPON_MODS}
+    mod_cards = []
+    for m in mods['mods']:
+        f = finder.find(m['part'])
+        note = ' '.join(x for x in extra_sentences(gb.get(m['name'], {}).get('text', ''), m['effect']))
+        mod_cards.append('<div class="box"><h3><img class="pix" src="img/items/%s.png" alt="" style="width:28px;height:28px">%s mod</h3><p><b style="color:var(--text)">Effect:</b> %s. %s</p><p><b style="color:var(--text)">Cost:</b> 1 %s + %d scrap at the Fabricator.</p>%s</div>' % (
+            m['part'].split(':')[1], E(m['name']), E(m['effect']), E(note), E(m['part_name']), m['scrap'], find_box(f, by_id, root).replace('<div class="box"><h3>Where to find it</h3>', '<div><h4 class="findh" style="margin-top:10px">Where to find the %s</h4>' % E(m['part_name']), 1)))
+    weapons_grid = ''.join('<a href="%s"><img src="img/w/%s.png" alt="" loading="lazy"><b>%s</b></a>' % (wurl(wid[k]), k, E(wid[k]['name'])) for k in mods['moddable'] if k in wid)
+    mod_by_id = {m['id']: m for m in mods['mods']}
+    combos = ''.join('<a href="%s"><img src="img/w/%s_%s.png" alt="" loading="lazy" style="height:110px"><b>%s + %s</b><span style="display:block;color:var(--yellow);font-size:11px;padding:0 6px">%s</span></a>' % (
+        wurl(wid[s['weapon']]), s['weapon'], mod_by_id[s['mod']]['letter'], E(wid[s['weapon']]['name']), E(mod_by_id[s['mod']]['name']), E(s['text'])) for s in mods['signatures'] if s['weapon'] in wid)
+    steps = ''.join('<div class="phase" style="border-color:var(--yellow)"><b style="color:var(--yellow)">%d. %s</b><p>%s</p></div>' % (i + 1, E(t), E(x)) for i, (t, x) in enumerate(C.HOW_TO))
+    levels = ''.join('<div class="item"><b style="font-family:var(--px)">Reinforced %s</b><span style="margin-left:12px;color:var(--soft)">+%d%% durability</span><span>%d duct tape + %d scrap</span></div>' % (
+        'I' * (i + 1), round(mods['reinforce_bonus'] * 100 * (i + 1)), t, s) for i, (t, s) in enumerate(mods['reinforce']))
+    fab = finder.find('olivares_zombie:fabricator')
+    body = '''<div class="crumbs"><a href="index.html">Wiki</a> / <b>Weapon mods &amp; Fabricator</b></div>
+<div class="entry"><div><div class="title"><h1>Weapon mods &amp; Fabricator</h1></div><p class="lead">%(intro)s</p>
+<div class="box"><h3>How to use the Fabricator</h3>%(steps)s</div>
+%(fab)s
+<div class="sec"><h2>The 5 mods</h2>%(mods)s</div>
+<div class="sec"><h2>Signature combos</h2><p style="color:var(--soft)">These weapon + mod pairs get a bonus of their own.</p><div class="mini">%(combos)s</div></div>
+<div class="sec"><h2>Weapons that accept a mod</h2><div class="mini">%(grid)s</div></div>
+<div class="sec"><h2>Reinforced weapons</h2><div class="box"><p>%(reinforce)s</p>%(levels)s</div></div>
+<div class="tip"><b>REPAIRS</b>%(wrench)s</div>
+</div><aside class="info"><div class="viewer" style="cursor:default"><div class="still" style="display:flex"><img src="img/misc/fabricator.png" alt=""></div></div>
+<div class="rows"><div><span>Mods</span><b>%(nmods)d</b></div><div><span>Mod cost</span><b>1 part + 3 scrap</b></div><div><span>Combos</span><b>%(ncombos)d</b></div><div><span>Weapons</span><b>%(nweapons)d melee</b></div><div><span>Reinforced</span><b>3 levels</b></div></div></aside></div>''' % dict(
+        intro=E(C.INTRO), steps=steps, fab=find_box(fab, by_id, root).replace('Where to find it', 'Getting a Fabricator'), mods=''.join(mod_cards),
+        combos=combos, grid=weapons_grid, reinforce=E(C.REINFORCE), levels=levels, wrench=E(C.WRENCH),
+        nmods=len(mods['mods']), ncombos=len(mods['signatures']), nweapons=len([k for k in mods['moddable'] if k in wid]))
+    write(rel, layout(rel, 'Weapon mods & Fabricator', body, 'mods'))
+
+
 # ------------------------------------------------------------------------------------------------ home + soon pages
 def home(zs, by_id, counts):
     bosses = [z for z in zs if z['kind'] == 'boss']
@@ -344,11 +500,14 @@ def soon_pages():
             write(rel, layout(rel, name, body, slug))
 
 
-def search_index(zs):
+def search_index(zs, ws=()):
     entries = []
     for z in zs:
         entries.append(dict(title=z['name'], url=zurl(z), kind='boss' if z['kind'] == 'boss' else 'zombie', icon='img/eggs/%s.png' % z['id'],
                             keys=' '.join([z['special'], z['damage'], z['id'].replace('_', ' ')] + tags_of(z))))
+    for w in ws:
+        entries.append(dict(title=w['name'], url=wurl(w), kind='weapon', icon='img/items/%s.png' % w['id'],
+                            keys=' '.join([w['kind'], w['special'], w['rarity']])))
     for group, items in SECTIONS:
         for slug, name, icon, _c in items:
             entries.append(dict(title=name, url=url(slug), kind='section' if slug in BUILT else 'soon', icon=icon, keys=group))
@@ -361,19 +520,27 @@ def main():
     by_id = {z['id']: z for z in zs}
     counts = W.counts()
     if not fast and os.path.isdir(OUT):
-        shutil.rmtree(OUT)
+        shutil.rmtree(OUT, ignore_errors=True)            # a folder held by OneDrive or a browser stays: files are rewritten anyway
     os.makedirs(OUT, exist_ok=True)
     for sub in ('css', 'js'):
         shutil.copytree(os.path.join(WEB, sub), os.path.join(OUT, sub), dirs_exist_ok=True)
     A.build(OUT, zs, renders=not fast)
+    finder = W.Finder(zs)
+    ws = W.weapons(finder)
+    mods = W.mod_catalog()
+    A.build_weapons(OUT, ws, mods, renders=not fast)
+    for w in ws:
+        weapon_page(w, ws, by_id, mods)
+    weapon_list(ws)
+    mods_page(ws, mods, finder, by_id)
     for z in zs:
         (boss_page(z, by_id) if z['kind'] == 'boss' else zombie_page(z, by_id, zs))
     zombie_list(zs)
     boss_list([z for z in zs if z['kind'] == 'boss'])
     home(zs, by_id, counts)
     soon_pages()
-    search_index(zs)
-    print('wiki -> %s (%d zombie pages, %d boss pages)' % (OUT, sum(z['kind'] == 'zombie' for z in zs), sum(z['kind'] == 'boss' for z in zs)))
+    search_index(zs, ws)
+    print('wiki -> %s (%d zombie pages, %d boss pages, %d weapon pages)' % (OUT, sum(z['kind'] == 'zombie' for z in zs), sum(z['kind'] == 'boss' for z in zs), len(ws)))
 
 
 if __name__ == '__main__':

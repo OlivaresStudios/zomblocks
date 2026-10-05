@@ -278,3 +278,215 @@ def counts():
 
 def armor_sets():
     return re.findall(r'^\s+(\w+) = "(\w+)",', read(os.path.join(SRC, 'items', 'ArmorSets.ts')), re.M)
+
+
+# ------------------------------------------------------------------------------------------------ where to find things
+def loot_tables_ts():
+    """Loot.ts table name -> [(item id, share 0..1, min, max)]"""
+    out = {}
+    for m in re.finditer(r'static readonly (\w+) = new LootTable\(\[(.*?)\]\);', LOOT_TS, re.S):
+        rows = []
+        for e in re.finditer(r'\{ item: ItemIds\.(\w+), weight: (\d+)(?:, min: (\d+))?(?:, max: (\d+))? \}', m.group(2)):
+            rows.append((ITEM_IDS.get(e.group(1), e.group(1)), int(e.group(2)), int(e.group(3) or 1), int(e.group(4) or e.group(3) or 1)))
+        total = sum(r[1] for r in rows) or 1
+        out[m.group(1)] = [(i, w / total, mn, mx) for i, w, mn, mx in rows]
+    return out
+
+
+def drop_calls(src):
+    """[(table, chance)] of the Loot.dropFrom(...) lines of a script"""
+    out = []
+    for line in src.splitlines():
+        if 'Loot.dropFrom(' not in line:
+            continue
+        cond = re.search(r'if \(Utils\.chance\(([\d.]+)\)\)', line)
+        p = float(cond.group(1)) if cond else 1.0
+        tern = re.search(r'Utils\.chance\(([\d.]+)\) \? Loot\.(\w+) : Loot\.(\w+)', line)
+        if tern:
+            q = float(tern.group(1))
+            out += [(tern.group(2), p * q), (tern.group(3), p * (1 - q))]
+            continue
+        t = re.search(r'Loot\.dropFrom\([^)]*?Loot\.(\w+)', line)
+        if t:
+            out.append((t.group(1), p))
+    return out
+
+
+def loot_sources():
+    """[(source label, [(table, chance per search/drop)])] - every place the Loot.ts tables come out of"""
+    out = []
+    src = read(os.path.join(SRC, 'props', 'Searchable.ts'))
+    for m in re.finditer(r'name: "([^"]+)", loot: \[(.*?)\], sound', src):
+        out.append(('%s (search)' % m.group(1), [(t, float(c)) for t, c in re.findall(r'\[Loot\.(\w+), ([\d.]+)\]', m.group(2))]))
+    out.append(('Supply crate', drop_calls(read(os.path.join(SRC, 'props', 'SupplyCrate.ts')))))
+    out.append(("Santa Bloater's gifts", drop_calls(read(os.path.join(SRC, 'zombies', 'types', 'Bloaters.ts')))))
+    out.append(('Mailman (25% of the time)', [('PACKAGE', 0.25)]))
+    out.append(('Lucky Coin bonus on your kills', [(t, c * 0.35) for t, c in drop_calls(read(os.path.join(SRC, 'items', 'Survival.ts')))]))
+    am = read(os.path.join(SRC, 'npcs', 'AllyMenu.ts'))
+    finds = re.findall(r'\[Loot\.(\w+), (\d+), \d+\]', am)
+    total = sum(int(w) for _, w in finds) or 1
+    chance = float(re.search(r'LOOT_CHANCE = ([\d.]+)', am).group(1))
+    out.append(("An ally's bag (per zombie it kills)", [(t, chance * int(w) / total) for t, w in finds]))
+    return out
+
+
+def recipes():
+    """result item id -> [(ingredient id, count)]"""
+    out = {}
+    for f in glob.glob(os.path.join(BP, 'recipes', '*.json')):
+        d = jload(f)
+        key = next(k for k in d if k.startswith('minecraft:recipe'))
+        r = d[key]
+        res = r['result']['item'] if isinstance(r['result'], dict) else r['result']
+        ings = {}
+        for i in r.get('ingredients', []):
+            ings[i['item']] = ings.get(i['item'], 0) + i.get('count', 1)
+        out[res] = sorted(ings.items(), key=lambda x: -x[1])
+    return out
+
+
+def trade_offers():
+    """(item id -> [dict(category, price, amount, rarity, barter)], category id -> name)"""
+    src = read(os.path.join(SRC, 'npcs', 'TradeOffers.ts'))
+    sets = {}
+    for name in ('OP_ITEMS', 'RARE_ITEMS'):
+        m = re.search(r'const %s: ReadonlySet<string> = new Set\(\[(.*?)\]\);' % name, src, re.S)
+        sets[name] = {ITEM_IDS.get(x, x) for x in re.findall(r'ItemIds\.(\w+)', m.group(1))} if m else set()
+    m = re.search(r'const OP_SETS = \[(.*?)\]', src)
+    op_sets = re.findall(r'"(\w+)"', m.group(1)) if m else []
+    m = re.search(r'const RARE_SETS = \[(.*?)\]', src)
+    rare_sets = re.findall(r'"(\w+)"', m.group(1)) if m else []
+
+    def rarity(item):
+        name = item.split(':')[-1]
+        if item in sets['OP_ITEMS'] or any(name.startswith(p) for p in op_sets):
+            return 'OP'
+        if item in sets['RARE_ITEMS'] or any(name.startswith(p) for p in rare_sets):
+            return 'Rare'
+        return 'Common'
+    out, names = {}, {}
+    body = src[src.index('static readonly CATEGORIES'):]
+    for m in re.finditer(r'\{\s*id: "(\w+)",\s*name: "(?:§.)?([^"]+)",', body):
+        cat = m.group(1)
+        names[cat] = m.group(2)
+        start = body.index('offers: [', m.end()) + len('offers: ')
+        block = braced(body, start)
+        for o in re.finditer(r'Offers\.sell\(ItemIds\.(\w+), "[^"]*", (\d+)(?:, (\d+))?\)', block):
+            item = ITEM_IDS.get(o.group(1), o.group(1))
+            out.setdefault(item, []).append(dict(category=cat, price=int(o.group(2)), amount=int(o.group(3) or 1), rarity=rarity(item), barter=None))
+        for o in re.finditer(r'Offers\.barter\(\[(.*?)\], ItemIds\.(\w+), "[^"]*"(?:, (\d+))?\)', block, re.S):
+            item = ITEM_IDS.get(o.group(2), o.group(2))
+            cost = [(c.group(1), int(c.group(2))) for c in re.finditer(r'item: "([^"]+)", amount: (\d+)', o.group(1))]
+            out.setdefault(item, []).append(dict(category=cat, price=0, amount=int(o.group(3) or 1), rarity=rarity(item), barter=cost))
+    return out, names
+
+
+def traders():
+    """[dict(id, name, categories, greetings)] from Trader.TYPES"""
+    src = read(os.path.join(SRC, 'npcs', 'Trader.ts'))
+    out = []
+    for m in re.finditer(r'\{ id: "(\w+)", name: "([^"]+)", categories: \[([^\]]*)\], greetings: \[(.*?)\] \}', src):
+        out.append(dict(id=m.group(1), name=m.group(2), categories=re.findall(r'"(\w+)"', m.group(3)), greetings=re.findall(r'"([^"]+)"', m.group(4))))
+    return out
+
+
+STOCK_CHANCE = {'Common': 85, 'Rare': 45, 'OP': 15}
+
+
+class Finder:
+    """everything that gives an item: traders (price, stock chance), containers / crates / bags (chance), bosses,
+    zombie drops, crafting"""
+
+    def __init__(self, zombie_list):
+        self.tables, self.sources = loot_tables_ts(), loot_sources()
+        self.offers, self.cat_names = trade_offers()
+        self.trader_list, self.recipes, self.boss = traders(), recipes(), boss_loot()
+        self.zombies = zombie_list
+
+    def find(self, item_id):
+        res = dict(traders=[], loot=[], bosses=[], zombies=[], craft=self.recipes.get(item_id))
+        for o in self.offers.get(item_id, []):
+            who = [t['name'] for t in self.trader_list if o['category'] in t['categories']]
+            res['traders'].append(dict(o, category_name=self.cat_names.get(o['category'], o['category']), who=who, stock=STOCK_CHANCE[o['rarity']]))
+        for label, rolls in self.sources:
+            p = sum(chance * share for table, chance in rolls for i, share, _a, _b in self.tables.get(table, []) if i == item_id)
+            if p > 0:
+                res['loot'].append((label, p))
+        for bid, loot in self.boss.items():
+            for kind in ('jackpot', 'bonus'):
+                if any(pr['item'] == item_id for pr in loot[kind]):
+                    res['bosses'].append((bid, kind))
+        for z in self.zombies:
+            for i, c, _n in z['drops']:
+                if i == item_id:
+                    res['zombies'].append((z['id'], c))
+            for i, c in z['extra_drops']:
+                if i == item_id:
+                    res['zombies'].append((z['id'], c))
+        return res
+
+    def rarity(self, item_id, find):
+        if find['traders']:
+            return find['traders'][0]['rarity']
+        return 'OP' if any(k == 'jackpot' for _, k in find['bosses']) else 'Rare'
+
+
+# ------------------------------------------------------------------------------------------------ weapons
+def bp_items():
+    out = {}
+    for f in glob.glob(os.path.join(BP, 'items', '**', '*.json'), recursive=True):
+        try:
+            d = jload(f)['minecraft:item']
+            out[d['description']['identifier']] = d.get('components', {})
+        except (ValueError, KeyError):
+            pass
+    return out
+
+
+def mod_catalog():
+    src = read(os.path.join(SRC, 'weapons', 'mods', 'WeaponModCatalog.ts'))
+    letters = {1: 'e', 2: 't', 3: 'f', 4: 'i', 5: 's'}               # make_weapon_mods.py MODS (bones mod_<letter>)
+    mods = []
+    for m in re.finditer(r'\{ id: (\d+), key: "(\w+)", name: "(\w+)", part: "([^"]+)", partLabel: "([^"]+)", scrap: (\d+), color: "[^"]*", effect: "([^"]+)" \}', src):
+        mods.append(dict(id=int(m.group(1)), key=m.group(2), name=m.group(3), part=m.group(4), part_name=m.group(5),
+                         scrap=int(m.group(6)), effect=m.group(7), letter=letters[int(m.group(1))]))
+    moddable = {}
+    for m in re.finditer(r'"olivares_zombie:(\w+)": \{ index: (\d+), name: "([^"]+)" \}', src):
+        moddable[m.group(1)] = int(m.group(2))
+    signatures = [dict(weapon=m.group(1), mod=int(m.group(2)), text=m.group(3))
+                  for m in re.finditer(r'\{ weapon: "olivares_zombie:(\w+)", mod: (\d+), text: "([^"]+)" \}', src)]
+    costs = [(int(a), int(b)) for a, b in re.findall(r'\{ tape: (\d+), scrap: (\d+) \}', src)]
+    bonus = float(re.search(r'REINFORCE_BONUS = ([\d.]+)', src).group(1))
+    return dict(mods=mods, moddable=moddable, signatures=signatures, reinforce=costs, reinforce_bonus=bonus)
+
+
+def weapons(finder):
+    """the guidebook weapons + their numbers (damage, uses), where to find them, mods"""
+    items = bp_items()
+    mods = mod_catalog()
+    out = []
+    for w in D.WEAPONS:
+        iid = NS + w['id']
+        comp = items.get(iid, {})
+        dmg = comp.get('minecraft:damage')
+        dmg = dmg.get('value') if isinstance(dmg, dict) else dmg
+        damage = w.get('damage') or (str(dmg) if dmg is not None else '-')
+        durability = comp.get('minecraft:durability', {}).get('max_durability')
+        stack = comp.get('minecraft:max_stack_size', 1)
+        stack = stack.get('value', 1) if isinstance(stack, dict) else stack
+        if w.get('uses'):
+            uses = w['uses']
+        elif w['kind'] == 'Spray':
+            uses = 'tank, 10 s of use'
+        elif durability:
+            uses = '%d hits' % durability
+        elif stack > 1:
+            uses = 'stacks of %d' % stack
+        else:
+            uses = 'unlimited'
+        find = finder.find(iid)
+        out.append(dict(id=w['id'], item=iid, name=w['name'], kind=w['kind'], special=w['special'], text=w['text'], tip=w['tip'],
+                        tip_title=w.get('tip_title', 'Tip'), model=w['model'], damage=damage, uses=uses, durability=durability,
+                        find=find, rarity=finder.rarity(iid, find), moddable=w['id'] in mods['moddable'],
+                        signatures=[s for s in mods['signatures'] if s['weapon'] == w['id']]))
+    return out
