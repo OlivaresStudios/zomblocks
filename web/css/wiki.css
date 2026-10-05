@@ -68,9 +68,6 @@ footer{border-top:1px solid var(--line);margin-top:50px;padding-top:16px;color:v
 .card:hover{transform:translateY(-2px);border-color:#5aff8277;text-decoration:none}
 .card .pic{height:132px;display:flex;align-items:flex-end;justify-content:center;background:radial-gradient(ellipse at 50% 88%,#5aff8222,transparent 65%)}
 .card .pic img{max-height:126px;max-width:100%;filter:drop-shadow(0 8px 10px #000a)}
-.card .pic{position:relative}
-.card .preview3d{position:absolute;inset:0;pointer-events:none}
-.card .preview3d canvas{width:100%;height:100%;display:block}
 .card h3{margin:10px 0 2px;font-size:15px}.card p{margin:0;color:var(--muted);font-size:12px}
 .card .count{position:absolute;top:10px;right:10px;font:600 11px Inter,sans-serif;color:var(--muted);background:#0b120f;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
 .card.soon{opacity:.55}.card.soon:after{content:"coming soon";position:absolute;top:10px;left:10px;font:700 9px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);border:1px solid #ffd63c55;border-radius:999px;padding:1px 7px;background:#0b120f}

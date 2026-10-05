@@ -243,8 +243,8 @@ def zombie_list(zs):
     cards = []
     for z in [z for z in zs if z['kind'] == 'zombie']:
         sub = '%s<span>%d &#10084;</span>' % (skulls(z['threat']), z['health'])
-        cards.append('<a class="card" href="%s" data-name="%s" data-threat="%d" data-health="%d" data-tags="%s" data-model="%s"><div class="pic"><img src="../%s" alt="" loading="lazy"></div><h3>%s</h3><div class="meta">%s</div></a>' % (
-            z['id'] + '.html', E(z['name']), z['threat'], z['health'], ' '.join(tags_of(z)), z['id'], zimg(z), E(z['name']), sub))
+        cards.append('<a class="card" href="%s" data-name="%s" data-threat="%d" data-health="%d" data-tags="%s"><div class="pic"><img src="../%s" alt="" loading="lazy"></div><h3>%s</h3><div class="meta">%s</div></a>' % (
+            z['id'] + '.html', E(z['name']), z['threat'], z['health'], ' '.join(tags_of(z)), zimg(z), E(z['name']), sub))
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <b>Zombies</b></div>
 <div class="pagehead"><div><h1>Zombies</h1><p>%d kinds of infected, each in 3 variants. Threat goes from 1 (a nuisance) to 5 (run). Bosses have <a href="../bosses/index.html">their own page</a>.</p></div></div>
 <div class="filters"><input id="ftext" type="search" placeholder="Filter by name..."><span class="lbl">Threat</span>%s<span class="lbl">Show</span>
@@ -253,8 +253,7 @@ def zombie_list(zs):
 <span style="color:var(--muted);font-size:12px"><b id="fcount" style="color:var(--text)"></b> shown</span></div>
 <div class="cards" data-filter-grid>%s</div><p class="empty" id="fempty" style="display:none">No zombie matches these filters.</p>''' % (
         len(cards), ''.join('<button data-threat-btn="%d">%d</button>' % (i, i) for i in range(1, 6)), ''.join(cards))
-    scripts = '<script src="../vendor/three.js"></script><script src="../js/viewer.js"></script><script>WikiViewer.hoverDeath("../");</script>'
-    write(rel, layout(rel, 'Zombies', body, 'zombies/index', scripts))
+    write(rel, layout(rel, 'Zombies', body, 'zombies/index'))
 
 
 # ------------------------------------------------------------------------------------------------ boss pages

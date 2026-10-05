@@ -179,7 +179,7 @@
 	}
 
 	// ------------------------------------------------------------------ viewer
-	function Viewer(el, bundle, still) {
+	function Viewer(el, bundle) {
 		var self = this;
 		this.el = el; this.bundle = bundle; this.t = 0; this.zoom = (bundle.view && bundle.view.zoom) || 1;
 		this.yaw = bundle.view ? bundle.view.yaw : -0.5; this.pitch = bundle.view ? bundle.view.pitch : 0.18;
@@ -217,10 +217,6 @@
 		shadow.rotation.x = -Math.PI / 2; shadow.position.set(this.center.x, box.min.y + 0.05, this.center.z); this.scene.add(shadow);
 		this.setAnim(Object.keys(bundle.anims)[0]);
 		this.setMod("");
-		this.clock = new THREE.Clock();
-		(function loop() { if (self.dead) return; requestAnimationFrame(loop); self.frame(); })();
-		el.classList.add("live");
-		if (still) return;
 		// drag to turn, wheel to zoom
 		var drag = null;
 		el.addEventListener("pointerdown", function (e) { drag = { x: e.clientX, y: e.clientY }; el.setPointerCapture(e.pointerId); el.style.cursor = "grabbing"; });
@@ -231,21 +227,10 @@
 		});
 		el.addEventListener("pointerup", function () { drag = null; el.style.cursor = ""; });
 		el.addEventListener("wheel", function (e) { e.preventDefault(); self.zoom = Math.max(0.5, Math.min(2.2, self.zoom * (e.deltaY > 0 ? 1.08 : 0.92))); }, { passive: false });
+		this.clock = new THREE.Clock();
+		(function loop() { requestAnimationFrame(loop); self.frame(); })();
+		el.classList.add("live");
 	}
-	Viewer.prototype.dispose = function () {
-		this.dead = true;
-		this.renderer.dispose();
-		if (this.renderer.forceContextLoss) this.renderer.forceContextLoss();
-		if (this.renderer.domElement.parentNode) this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
-	};
-	/** play an animation once and hold its last frame */
-	Viewer.prototype.playOnce = function (key) {
-		var clip = this.bundle.anims[key];
-		this.steps = [{ key: key, dur: 1e9, once: true }];
-		this.step = 0; this.stepT = 0;
-		this.setAnim(key);
-		return clip ? (clip.animation_length || 2) : 0;
-	};
 	Viewer.prototype.setAnim = function (key) { this.clip = this.bundle.anims[key] || null; this.t = 0; };
 	Viewer.prototype.setSkin = function (i) { if (this.textures[i]) this.model.material.map = this.textures[i]; };
 	/** weapon mods: the decorations are hidden bones mod_<letter>... ("" = no mod) */
@@ -292,66 +277,7 @@
 	};
 
 	// ------------------------------------------------------------------ page wiring
-	// zombie list: hovering a card (holding it on a phone) plays the death once in 3D, then the picture comes back
-	var loaded = {};
-	function loadModel(src, id, done) {
-		if (window.WIKI_MODELS && window.WIKI_MODELS[id]) return done();
-		if (loaded[id]) { loaded[id].push(done); return; }
-		loaded[id] = [done];
-		var s = document.createElement("script");
-		s.src = src;
-		s.onload = function () { var list = loaded[id]; loaded[id] = null; list.forEach(function (f) { f(); }); };
-		document.head.appendChild(s);
-	}
-	function deathPreview(card, root) {
-		var id = card.getAttribute("data-model"), pic = card.querySelector(".pic"), img = pic && pic.querySelector("img");
-		if (!id || !pic || card._preview) return;
-		card._preview = { pending: true };
-		loadModel(root + "models/" + id + ".js", id, function () {
-			var state = card._preview;
-			if (!state || !state.pending) return;
-			var bundle = window.WIKI_MODELS[id];
-			var death = bundle && Object.keys(bundle.anims).filter(function (k) { return k.indexOf("death") === 0; }).sort()[0];
-			if (!death || !window.THREE) { card._preview = null; return; }
-			var box = document.createElement("div");
-			box.className = "preview3d";
-			pic.appendChild(box);
-			var v;
-			try { v = new Viewer(box, bundle, true); } catch (err) { box.remove(); card._preview = null; return; }
-			v.zoom = 0.62;                                   // framed like the picture of the card
-			var len = v.playOnce(death);
-			if (img) img.style.visibility = "hidden";
-			state.pending = false; state.viewer = v; state.box = box;
-			state.timer = setTimeout(function () { stopPreview(card); }, (len + 0.6) * 1000);
-		});
-	}
-	function stopPreview(card) {
-		var state = card._preview;
-		card._preview = null;
-		if (!state) return;
-		state.pending = false;
-		clearTimeout(state.timer);
-		if (state.viewer) state.viewer.dispose();
-		if (state.box) state.box.remove();
-		var img = card.querySelector(".pic img");
-		if (img) img.style.visibility = "";
-	}
-
 	window.WikiViewer = {
-		hoverDeath: function (root) {
-			document.querySelectorAll(".card[data-model]").forEach(function (card) {
-				var hold = null;
-				card.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") deathPreview(card, root); });
-				card.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") stopPreview(card); });
-				card.addEventListener("pointerdown", function (e) {
-					if (e.pointerType === "mouse") return;
-					hold = setTimeout(function () { hold = null; card._held = true; deathPreview(card, root); }, 250);
-				});
-				["pointerup", "pointercancel"].forEach(function (ev) { card.addEventListener(ev, function () { if (hold) clearTimeout(hold); hold = null; }); });
-				card.addEventListener("contextmenu", function (e) { if (card._held) e.preventDefault(); });
-				card.addEventListener("click", function (e) { if (card._held) { e.preventDefault(); card._held = false; } });
-			});
-		},
 		mount: function (id, options) {
 			var el = document.getElementById("viewer");
 			var bundle = window.WIKI_MODELS && window.WIKI_MODELS[id];
