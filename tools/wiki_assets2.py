@@ -71,7 +71,36 @@ def entity_render(geometry, texture, geos, box=(300, 300), yaw=30, pitch=20):
     return render_layers([(geo_doc(geos[geometry]), tex_of(texture))], yaw, pitch, box)
 
 
+# example hologram screens (card + status strip, as seen in game): (file name, card texture, status texture)
+FAB = 'textures/entity/olivares_zombie/fabricator/'
+GAR = 'textures/entity/olivares_zombie/buggy/garage/'
+HOLO_EXAMPLES = {
+    'fab_ready': (FAB + 'card_2', FAB + 'status_1'),
+    'fab_missing': (FAB + 'card_4', FAB + 'status_6'),
+    'fab_working': (FAB + 'card_0', FAB + 'status_13'),
+    'fab_reinforce': (FAB + 'card_5', FAB + 'status_8'),
+    'fab_remove': (FAB + 'card_9', FAB + 'status_18'),
+    'fab_combo': (FAB + 'card_0', FAB + 'combo_1'),
+    'gar_buy': (GAR + 'card_00', GAR + 'status_1'),
+    'gar_installed': (GAR + 'card_04', GAR + 'status_3'),
+    'gar_missing': (GAR + 'card_06', GAR + 'status_7'),
+    'gar_paint': (GAR + 'card_22', GAR + 'status_4'),
+    'gar_trunk': (GAR + 'card_14', GAR + 'status_5'),
+    'gar_repair': (GAR + 'card_33', GAR + 'status_6'),
+}
+
+
+def holo_screen(card, status, k=2):
+    a, b = tex_of(card), tex_of(status)
+    img = Image.new('RGBA', (max(a.width, b.width) + 8, a.height + b.height + 12), (5, 8, 7, 255))
+    img.alpha_composite(a, (4, 4))
+    img.alpha_composite(b, (4, a.height + 8))
+    return img.resize((img.width * k, img.height * k), Image.NEAREST)
+
+
 def build(out, armor, furniture, containers, renders=True):
+    for name, (card, status) in HOLO_EXAMPLES.items():
+        save(holo_screen(card, status), os.path.join(out, 'img', 'holo', name + '.png'))
     geos, anims = W.geometries(), W.animations()
     human = W.CLIENT[W.NS + 'survivor_ally']['desc']
     walk = {k: anims[v] for k, v in human.get('animations', {}).items() if v in anims and k in ('walk', 'idle', 'move')}

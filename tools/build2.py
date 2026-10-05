@@ -33,6 +33,12 @@ def steps(rows, color='var(--yellow)', fmt=None):
         color, color, E(t), E(x.format(**fmt) if fmt else x)) for t, x in rows)
 
 
+def holo_gallery(examples, root=''):
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:12px">%s</div>' % ''.join(
+        '<figure style="margin:0;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px"><img src="%simg/holo/%s.png" alt="" loading="lazy" style="width:100%%;image-rendering:pixelated;border-radius:6px"><figcaption style="color:var(--soft);font-size:12px;margin-top:6px">%s</figcaption></figure>' % (
+            root, n, E(c)) for n, c in examples)
+
+
 def find_line(B, find, root, by_id):
     """a short 'where to find it' line for list pages"""
     parts = []
@@ -269,8 +275,8 @@ def buggy_page(B, finder, by_id):
         secs.append('<div class="sec"><h2>%s</h2><div class="cards">%s</div></div>' % (E(c['name']), ''.join(cards)))
     f = finder.find(W.NS + 'rusty_buggy')
     main = '''<div class="sec"><h2>Driving</h2><div class="box">%s</div></div>
-<div class="sec"><h2>The garage</h2><div class="box">%s</div></div>%s
-<div class="box"><h3>Where to find it</h3><p>%s</p></div>''' % (steps(T.BUGGY_HOW, fmt=fmt), steps(T.GARAGE_HOW, 'var(--blue)'), ''.join(secs), find_line(B, f, root, by_id))
+<div class="sec"><h2>The garage</h2><div class="box">%s<h3 style="margin-top:14px">What the panel shows</h3>%s</div></div>%s
+<div class="box"><h3>Where to find it</h3><p>%s</p></div>''' % (steps(T.BUGGY_HOW, fmt=fmt), steps(T.GARAGE_HOW, 'var(--blue)'), holo_gallery(T.GARAGE_EXAMPLES), ''.join(secs), find_line(B, f, root, by_id))
     price = min((t['price'] for t in f['traders']), default=0)
     rows = [('Seats', '2'), ('Full tank', '~%d blocks' % fmt['range']), ('Hull', str(fmt['hull'])), ('Modules', str(sum(len(c['cards']) for c in cat if c['name'] not in ('Dye', 'Service')))),
             ('Paints', str(sum(len(c['cards']) for c in cat if c['name'] == 'Dye'))), ('Price', '%d scrap' % price if price else '-')]

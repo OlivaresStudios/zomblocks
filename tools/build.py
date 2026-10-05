@@ -442,7 +442,7 @@ def mods_page(ws, mods, finder, by_id):
     fab = finder.find('olivares_zombie:fabricator')
     body = '''<div class="crumbs"><a href="index.html">Wiki</a> / <b>Weapon mods &amp; Fabricator</b></div>
 <div class="entry"><div><div class="title"><h1>Weapon mods &amp; Fabricator</h1></div><p class="lead">%(intro)s</p>
-<div class="box"><h3>How to use the Fabricator</h3>%(steps)s</div>
+<div class="box"><h3>How to use the Fabricator</h3>%(steps)s<h3 style="margin-top:14px">What the panel shows</h3>%(examples)s</div>
 %(fab)s
 <div class="sec"><h2>The 5 mods</h2>%(mods)s</div>
 <div class="sec"><h2>Signature combos</h2><p style="color:var(--soft)">These weapon + mod pairs get a bonus of their own.</p><div class="mini">%(combos)s</div></div>
@@ -451,7 +451,7 @@ def mods_page(ws, mods, finder, by_id):
 <div class="tip"><b>REPAIRS</b>%(wrench)s</div>
 </div><aside class="info"><div class="viewer" style="cursor:default"><div class="still" style="display:flex"><img src="img/misc/fabricator.png" alt=""></div></div>
 <div class="rows"><div><span>Mods</span><b>%(nmods)d</b></div><div><span>Mod cost</span><b>1 part + 3 scrap</b></div><div><span>Combos</span><b>%(ncombos)d</b></div><div><span>Weapons</span><b>%(nweapons)d melee</b></div><div><span>Reinforced</span><b>3 levels</b></div></div></aside></div>''' % dict(
-        intro=E(C.INTRO), steps=steps, fab=find_box(fab, by_id, root).replace('Where to find it', 'Getting a Fabricator'), mods=''.join(mod_cards),
+        intro=E(C.INTRO), steps=steps, examples=__import__('build2').holo_gallery(__import__('build2').T.FAB_EXAMPLES), fab=find_box(fab, by_id, root).replace('Where to find it', 'Getting a Fabricator'), mods=''.join(mod_cards),
         combos=combos, grid=weapons_grid, reinforce=E(C.REINFORCE), levels=levels, wrench=E(C.WRENCH),
         nmods=len(mods['mods']), ncombos=len(mods['signatures']), nweapons=len([k for k in mods['moddable'] if k in wid]))
     write(rel, layout(rel, 'Weapon mods & Fabricator', body, 'mods'))

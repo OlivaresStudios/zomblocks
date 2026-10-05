@@ -147,3 +147,21 @@ FIRST_NIGHT = [
                   'cracked barricade.'),
     ('Know your enemy', 'Read the zombie pages of this wiki: each one tells you how it fights and how to beat it.'),
 ]
+
+# example hologram screens shown under "How to use" (image name in img/holo, caption)
+FAB_EXAMPLES = [
+    ('fab_ready', 'You have the lighter and 3 scrap: READY, sneak + punch to build.'),
+    ('fab_missing', 'A part is missing: the strip tells you which one.'),
+    ('fab_working', 'Building: the welding arm works for 2 seconds.'),
+    ('fab_combo', 'On the Electric Guitar the Electric card shows its signature combo.'),
+    ('fab_reinforce', 'Reinforce: each level costs more duct tape and scrap.'),
+    ('fab_remove', 'Remove Mod: free, but the parts are lost.'),
+]
+GARAGE_EXAMPLES = [
+    ('gar_buy', 'A module you do not own yet: TO BUY, sneak + punch to pay.'),
+    ('gar_installed', 'Already on the buggy: sneak + punch removes it (you keep it).'),
+    ('gar_missing', 'Not enough items: the action bar lists what is missing.'),
+    ('gar_paint', 'Dye cards show the painted buggy; APPLIED is the current paint.'),
+    ('gar_trunk', 'The Big Trunk needs the Trunk first.'),
+    ('gar_repair', 'Service: repair the hull with a wrench, or pack the buggy up.'),
+]
