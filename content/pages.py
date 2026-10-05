@@ -109,6 +109,24 @@ SUPPLY_DROP = ('A Walkie-Talkie calls your allies to you. With no ally around, i
 NOISE_TEXT = ('Some zombies hunt by ear, like the Blind. They hear survivors who walk or sprint (never the ones who sneak), '
               'weapons, explosions, the guitar, popcorn... and walk to the noise. The Ninja set makes you silent; the '
               'Scrap set makes you loud.')
+# longer texts of the special blocks (the guidebook 'Blocks' group gives the names, icons and short lines)
+BLOCK_TEXTS = {
+    'electric_fence': 'Zaps and shocks every zombie that touches it (3 damage, x2 if the zombie is wet). Survivors get a '
+                      'small shock too. Right click: on / off. Built at the Fabricator, 4 at a time.',
+    'barricade': 'Planks and fragile glass slow the horde down, but zombies stuck in front of them bash them to pieces. '
+                 'Duct tape patches a crack.',
+    'unstable_floor': 'Cracks under every step and collapses after a moment. It rebuilds itself after a minute. Lure heavy '
+                      'zombies on it.',
+    'elevator': 'Stand on it and jump to go up to the next elevator block, sneak to go down. Zombies cannot use it.',
+    'barbed_wire': 'Zombies crossing it are slowed down a lot and lose 1 health per second (bosses are not slowed). It '
+                   'wears out as they cross it and finally snaps: right click it with duct tape to make it like new.',
+    'glue_puddle': 'Put it on the ground: zombies walking in it are stuck (very slow). It dries up after about 30 seconds. '
+                   'Built at the Fabricator, 4 at a time.',
+    'sprinkler': 'Soaks every zombie within 4 blocks: wet zombies take double electric damage. It also puts out burning '
+                 'survivors. Put it next to an electric fence. Built at the Fabricator.',
+    'manhole': 'Zombies climb out of it while a survivor is around (never more than 4 nearby). Right click it with duct tape '
+               'to seal it for good.',
+}
 HAZARDS = [
     ('Toxic clouds', 'Virus barrels, virus bombs, the Spitter and the Warden leave clouds that hurt survivors (or zombies) '
                      'inside them. The Hazmat set is immune.'),
@@ -156,6 +174,7 @@ FAB_EXAMPLES = [
     ('fab_combo', 'On the Electric Guitar the Electric card shows its signature combo.'),
     ('fab_reinforce', 'Reinforce: each level costs more duct tape and scrap.'),
     ('fab_remove', 'Remove Mod: free, but the parts are lost.'),
+    ('fab_build', 'Without a melee weapon in hand: the build cards, here 4 Glue Puddles.'),
 ]
 GARAGE_EXAMPLES = [
     ('gar_buy', 'A module you do not own yet: TO BUY, sneak + punch to pay.'),

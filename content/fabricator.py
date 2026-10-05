@@ -15,6 +15,8 @@ HOW_TO = [
               '(its name and description change).'),
     ('Change or remove', 'A weapon holds one mod: a new one replaces the old one. Removing a mod is free, but the parts '
                          'are lost.'),
+    ('Build blocks', 'Right click the workbench with anything else in your hand: the cards are blocks made from parts '
+                     '(Glue Puddle, Sprinkler, Electric Fence). Sneak + punch builds them and they go to your inventory.'),
     ('Close', 'The panel closes when you walk away (6 blocks) or put the weapon away.'),
 ]
 

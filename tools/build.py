@@ -48,7 +48,7 @@ PLANNED = {
     'traders': ['The 8 kinds of trader and what each one sells', 'How stock is rolled (common, rare, OP)', 'Every price, and the barter'],
     'allies': ['Hiring an ally, its menu and its bag', 'Healing, reviving (45 s when downed), dismissing', 'The whistle compass'],
     'buggy': ['Fuel and driving', 'The 16 modules and 17 paints', 'The holographic garage and the wrench'],
-    'world': ['Containers you can search and their loot', 'Supply drops', 'Special blocks: electric fence, elevator, unstable floor',
+    'world': ['Containers you can search and their loot', 'Supply drops', 'Special blocks: electric fence, barbed wire, glue, sprinkler, manhole',
               'Toxic clouds, noise and the Blind'],
     'furniture': ['The 17 pieces of furniture', 'Carrying, breaking and what they drop'],
     'achievements': ['The 23 achievements and how to get each one'],
@@ -417,6 +417,17 @@ def extra_sentences(note, effect):
         yield sentence + '.'
 
 
+def build_rows():
+    """the build cards of the Fabricator (make_fabricator.BLOCK_RECIPES)"""
+    import make_fabricator as MF
+    rows = []
+    for key, name, count, effect, parts in MF.BLOCK_RECIPES:
+        cost = ' + '.join('%d %s' % (n, W.item_name('olivares_zombie:' + it)) for it, n in parts)
+        rows.append('<div class="item"><img class="pix" src="img/items/%s.png" alt="" style="width:28px;height:28px"><b>%s x%d</b><span style="margin-left:12px;color:var(--soft)">%s</span><span>%s</span></div>' % (
+            key, E(name), count, E(effect), E(cost)))
+    return ''.join(rows)
+
+
 def mods_page(ws, mods, finder, by_id):
     import importlib.util
     spec = importlib.util.spec_from_file_location('wiki_fab', os.path.join(W.WIKI, 'content', 'fabricator.py'))
@@ -445,6 +456,7 @@ def mods_page(ws, mods, finder, by_id):
 <div class="box"><h3>How to use the Fabricator</h3>%(steps)s<h3 style="margin-top:14px">What the panel shows</h3>%(examples)s</div>
 %(fab)s
 <div class="sec"><h2>The 5 mods</h2>%(mods)s</div>
+<div class="sec"><h2>Blocks you can build</h2><p style="color:var(--soft)">Right click the workbench without a melee weapon in hand.</p><div class="box">%(blocks)s</div></div>
 <div class="sec"><h2>Signature combos</h2><p style="color:var(--soft)">These weapon + mod pairs get a bonus of their own.</p><div class="mini">%(combos)s</div></div>
 <div class="sec"><h2>Weapons that accept a mod</h2><div class="mini">%(grid)s</div></div>
 <div class="sec"><h2>Reinforced weapons</h2><div class="box"><p>%(reinforce)s</p>%(levels)s</div></div>
@@ -452,7 +464,7 @@ def mods_page(ws, mods, finder, by_id):
 </div><aside class="info"><div class="viewer" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span><div class="still"><img src="img/misc/fabricator.png" alt=""></div></div>
 <div class="rows"><div><span>Mods</span><b>%(nmods)d</b></div><div><span>Mod cost</span><b>1 part + 3 scrap</b></div><div><span>Combos</span><b>%(ncombos)d</b></div><div><span>Weapons</span><b>%(nweapons)d melee</b></div><div><span>Reinforced</span><b>3 levels</b></div></div></aside></div>''' % dict(
         intro=E(C.INTRO), steps=steps, examples=__import__('build2').holo_gallery(__import__('build2').T.FAB_EXAMPLES), fab=find_box(fab, by_id, root).replace('Where to find it', 'Getting a Fabricator'), mods=''.join(mod_cards),
-        combos=combos, grid=weapons_grid, reinforce=E(C.REINFORCE), levels=levels, wrench=E(C.WRENCH),
+        combos=combos, grid=weapons_grid, blocks=build_rows(), reinforce=E(C.REINFORCE), levels=levels, wrench=E(C.WRENCH),
         nmods=len(mods['mods']), ncombos=len(mods['signatures']), nweapons=len([k for k in mods['moddable'] if k in wid]))
     scripts = '<script src="vendor/three.js"></script><script src="models/fabricator.js"></script><script src="js/viewer.js"></script><script>WikiViewer.mount("fabricator");</script>'
     write(rel, layout(rel, 'Weapon mods & Fabricator', body, 'mods', scripts))

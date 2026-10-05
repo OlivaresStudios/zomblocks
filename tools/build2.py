@@ -306,9 +306,8 @@ def world_page(B):
         verb = 'Smash it' if c['smash'] else 'Search it'
         boxes.append('<div class="box" id="%s"><h3><img src="img/world/%s.png" alt="" style="height:56px;width:auto">%s</h3><p>%s: each line is the chance to get something of that kind.</p>%s</div>' % (
             c['id'], c['id'], E(c['name']), verb, ''.join(rows)))
-    blocks = [s for s in W.D.SURVIVAL if s['id'] in ('electric_fence', 'barricade', 'unstable_floor', 'elevator')]
-    block_cards = ''.join('<div class="card" style="cursor:default" id="%s"><div class="pic"><img src="img/world/%s.png" alt="" loading="lazy"></div><h3>%s</h3><p>%s</p><p style="margin-top:6px;color:var(--yellow);font-size:12px">%s</p></div>' % (
-        s['id'], s['id'], E(s['name']), E(s['text']), E(s['tip'])) for s in blocks)
+    block_cards = ''.join('<div class="card" style="cursor:default" id="%s"><div class="pic"><img src="img/world/%s.png" alt="" loading="lazy"></div><h3>%s</h3><p>%s</p><p style="margin-top:6px;color:var(--yellow);font-size:12px">%s: %s</p></div>' % (
+        s['icon'], s['icon'], E(s['name']), E(T.BLOCK_TEXTS.get(s['icon'], s['text'])), E(s['line'][0]), E(s['line'][1])) for s in W.D.BLOCKS)
     hazards = ''.join('<div class="phase" style="border-color:var(--red)"><b style="color:var(--red)">%s</b><p>%s</p></div>' % (E(t), E(x)) for t, x in T.HAZARDS)
     main = '''<div class="sec"><h2>Containers</h2><p style="color:var(--soft)">%s</p>%s</div>
 <div class="sec"><h2>Supply drops</h2><div class="box"><p>%s</p></div></div>

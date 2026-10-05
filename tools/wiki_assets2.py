@@ -81,6 +81,7 @@ HOLO_EXAMPLES = {
     'fab_reinforce': (FAB + 'card_5', FAB + 'status_8'),
     'fab_remove': (FAB + 'card_9', FAB + 'status_18'),
     'fab_combo': (FAB + 'card_0', FAB + 'combo_1'),
+    'fab_build': (FAB + 'card_10', FAB + 'status_1'),
     'gar_buy': (GAR + 'card_00', GAR + 'status_1'),
     'gar_installed': (GAR + 'card_04', GAR + 'status_3'),
     'gar_missing': (GAR + 'card_06', GAR + 'status_7'),
@@ -181,6 +182,21 @@ def build(out, armor, furniture, containers, renders=True):
     save(panel(dict(level=50, paused=True)), os.path.join(out, 'img', 'monitor', 'paused.png'))
     for i, m in enumerate(IM.MESSAGES):
         save(panel(dict(msg=i)), os.path.join(out, 'img', 'monitor', m[0] + '.png'))
+    # special blocks (guidebook group 'Blocks'): the older ones like the guidebook, the new ones from their geometry
+    old = {'electric_fence': 'block:electric_fence_on', 'barricade': 'block:barricade_0',
+           'unstable_floor': 'block:unstable_floor_0', 'elevator': 'block:elevator_side'}
+    first = {'barbed_wire': 'barbed_wire_0', 'glue_puddle': 'glue_puddle', 'sprinkler': 'sprinkler', 'manhole': 'manhole'}
+    for b in W.D.BLOCKS:
+        key = b['icon']
+        try:
+            if key in old:
+                im = M.picture(old[key], (240, 240))
+            else:
+                geo = json.load(open(os.path.join(W.RP, 'models/blocks/olivares_zombie/%s.geo.json' % key), encoding='utf-8'))
+                im = M.render_model(geo, tex_of('textures/blocks/olivares_zombie/' + first[key]), 30, 22, box=(240, 240), max_scale=12)
+            save(im, os.path.join(out, 'img', 'world', key + '.png'))
+        except Exception as err:                                                   # noqa: BLE001
+            print('no picture for', key, err)
     # blocks and deployables (the guidebook pictures)
     for s in W.D.SURVIVAL:
         if s.get('model', '').startswith(('block:', 'entity:')):
