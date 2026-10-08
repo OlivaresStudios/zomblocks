@@ -36,7 +36,7 @@ def armor_sets_full(finder):
         for p in s['pieces']:
             iid = '%s%s_%s' % (NS, s['key'], p)
             comp = items.get(iid, {})
-            att = jload(os.path.join(RP, 'attachables', 'olivares_zombie', 'armor', '%s_%s.player.json' % (s['key'], p)))
+            att = jload(os.path.join(RP, 'attachables', 'olivares', 'zomblocks', 'armor', '%s_%s.player.json' % (s['key'], p)))
             att = att['minecraft:attachable']['description']
             pieces.append(dict(piece=p, item=iid, name=s['names'].get(p, p), slot=ARMOR_SLOTS[p],
                                protection=comp.get('minecraft:wearable', {}).get('protection', 0),
@@ -122,7 +122,7 @@ def skins_of(entity):
 def allies():
     am = read(os.path.join(SRC, 'npcs', 'AllyMenu.ts'))
     sa = read(os.path.join(SRC, 'npcs', 'SurvivorAlly.ts'))
-    ent = jload(os.path.join(BP, 'entities', 'npcs', 'survivor_ally.json'))['minecraft:entity']['components']
+    ent = jload(os.path.join(BP, 'entities', 'olivares', 'zomblocks', 'npcs', 'survivor_ally.json'))['minecraft:entity']['components']
     remedies = [dict(item=ITEM_IDS.get(m.group(1)), label=m.group(2), heal=int(m.group(3)), regen=int(m.group(4)) / 20)
                 for m in re.finditer(r'\{ item: ItemIds\.(\w+), label: "([^"]+)", heal: (\d+), regenTicks: (\d+) \}', am)]
     finds = [(t, int(w), int(p)) for t, w, p in re.findall(r'\[Loot\.(\w+), (\d+), (\d+)\]', am)]
@@ -189,7 +189,7 @@ def infection():
     src = read(os.path.join(SRC, 'status', 'Infection.ts'))
     stages = re.findall(r'name: "([^"]+)",\s*hint: "[^"]*",\s*threshold: (\d+)', src)
     period = int(re.search(r'PROGRESSION_PERIOD = (\d+)', src).group(1))
-    turned = re.findall(r'"olivares_zombie:(\w+)"', re.search(r'TURNED_ZOMBIES = \[(.*?)\]', src).group(1))
+    turned = re.findall(r'"olivares_zomblocks:(\w+)"', re.search(r'TURNED_ZOMBIES = \[(.*?)\]', src).group(1))
     return dict(stages=[(n, int(t)) for n, t in stages], seconds_per_level=period / 20, turned=turned)
 
 
@@ -198,7 +198,7 @@ def bite_severities():
     for _f, src in TS.items():
         for m in re.finditer(r'export class (\w+) extends \w+', src):
             body = braced(src, src.index('{', m.end()))
-            tid = re.search(r'typeId = "olivares_zombie:(\w+)"', body)
+            tid = re.search(r'typeId = "olivares_zomblocks:(\w+)"', body)
             s = re.search(r'biteSeverity = (\d+)', body)
             if tid and s:
                 sev[tid.group(1)] = int(s.group(1))

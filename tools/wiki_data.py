@@ -10,16 +10,31 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 WIKI = os.path.dirname(HERE)
 ADDON = os.path.dirname(WIKI)
-GEN = os.path.join(ADDON, 'zombie_tools', 'zombie_models_generator')
-RP = os.path.join(ADDON, 'zombie_RP')
-BP = os.path.join(ADDON, 'zombie_BP')
+
+
+def _folder(env, *names):
+    """the ZOMBIE_RP / ZOMBIE_BP / ZOMBIE_TOOLS environment variable, else the first of `names` next to the wiki"""
+    if os.environ.get(env):
+        return os.environ[env]
+    for n in names:
+        if os.path.isdir(os.path.join(ADDON, n)):
+            return os.path.join(ADDON, n)
+    return os.path.join(ADDON, names[0])
+
+
+# Add-on/{zombie_wiki, zombie_tools, zombie_RP, zombie_BP} on the PC, or the clones of the repos side by side
+GEN = os.path.join(_folder('ZOMBIE_TOOLS', 'zombie_tools', 'CLAUDE_TOOLS'), 'zombie_models_generator')
+RP = _folder('ZOMBIE_RP', 'zombie_RP')
+BP = _folder('ZOMBIE_BP', 'zombie_BP')
+os.environ.setdefault('ZOMBIE_RP', RP)
+os.environ.setdefault('ZOMBIE_BP', BP)
 SRC = os.path.join(BP, 'src')
 sys.path.insert(0, GEN)
 
 import guidebook_data as D          # noqa: E402  (the guidebook content: names, texts, tips, threat...)
 import make_guidebook as M          # noqa: E402  (BP helpers: speed words, prices, loot items)
 
-NS = 'olivares_zombie:'
+NS = 'olivares_zomblocks:'
 
 
 def load_module(path, name):
@@ -75,7 +90,7 @@ def client_entity(path):
 
 def client_entities():
     out = {}
-    for f in glob.glob(os.path.join(RP, 'entity', '*', '*.entity.json')):
+    for f in glob.glob(os.path.join(RP, 'entity', 'olivares', 'zomblocks', '*', '*.entity.json')):
         d = client_entity(f)
         out[d['identifier']] = dict(file=f, desc=d, folder=os.path.basename(os.path.dirname(f)))
     return out
@@ -108,7 +123,7 @@ def animations():
 
 # ------------------------------------------------------------------------------------------------ BP
 def bp_entity(zid):
-    return jload(os.path.join(BP, 'entities', 'zombies', zid + '.json'))['minecraft:entity']
+    return jload(os.path.join(BP, 'entities', 'olivares', 'zomblocks', 'zombies', zid + '.json'))['minecraft:entity']
 
 
 def loot_table(path):
@@ -146,9 +161,9 @@ LOOT_TS = read(os.path.join(SRC, 'items', 'Loot.ts'))
 def zombie_extra_drops():
     """zombie id -> [(item id or 'armor:<set>', chance)] from Loot.ZOMBIE_ARMOR / ZOMBIE_PARTS"""
     out = {}
-    for m in re.finditer(r'"olivares_zombie:(zombie_\w+)": \[ArmorSet\.(\w+), ([\d.]+)\]', LOOT_TS):
+    for m in re.finditer(r'"olivares_zomblocks:(zombie_\w+)": \[ArmorSet\.(\w+), ([\d.]+)\]', LOOT_TS):
         out.setdefault(m.group(1), []).append(('armor:' + m.group(2).lower(), float(m.group(3))))
-    for m in re.finditer(r'"olivares_zombie:(zombie_\w+)": \[ItemIds\.(\w+), ([\d.]+)\]', LOOT_TS):
+    for m in re.finditer(r'"olivares_zomblocks:(zombie_\w+)": \[ItemIds\.(\w+), ([\d.]+)\]', LOOT_TS):
         out.setdefault(m.group(1), []).append((ITEM_IDS.get(m.group(2), m.group(2)), float(m.group(3))))
     return out
 
@@ -157,7 +172,7 @@ def boss_loot():
     """boss id -> {'jackpot': [...], 'bonus': [...]} with dict(item, armor, min, max, modded)"""
     block = LOOT_TS[LOOT_TS.index('static readonly BOSSES'):LOOT_TS.index('/** Zombies carrying the parts')]
     out = {}
-    for m in re.finditer(r'"olivares_zombie:(zombie_\w+)": \{\s*jackpot: \[(.*?)\],\s*bonus: \[(.*?)\],\s*\}', block, re.S):
+    for m in re.finditer(r'"olivares_zomblocks:(zombie_\w+)": \{\s*jackpot: \[(.*?)\],\s*bonus: \[(.*?)\],\s*\}', block, re.S):
         def prizes(text):
             res = []
             for p in re.finditer(r'\{([^{}]*)\}', text):
@@ -176,8 +191,8 @@ def boss_loot():
 def boss_teams():
     src = read(os.path.join(SRC, 'zombies', 'BossTeams.ts'))
     out = {}
-    for m in re.finditer(r'"olivares_zombie:(zombie_\w+)": \[([^\]]*)\]', src):
-        out[m.group(1)] = re.findall(r'olivares_zombie:(zombie_\w+)', m.group(2))
+    for m in re.finditer(r'"olivares_zomblocks:(zombie_\w+)": \[([^\]]*)\]', src):
+        out[m.group(1)] = re.findall(r'olivares_zomblocks:(zombie_\w+)', m.group(2))
     return out
 
 
@@ -198,12 +213,12 @@ def braced(text, start):
 
 
 def ts_constants():
-    """'Class.NAME' -> 'olivares_zombie:...' for the static string constants of every script (indirect type ids)"""
+    """'Class.NAME' -> 'olivares_zomblocks:...' for the static string constants of every script (indirect type ids)"""
     out = {}
     for src in TS.values():
         for c in re.finditer(r'export (?:abstract )?class (\w+)', src):
             body = braced(src, src.index('{', c.end()))
-            for k, v in re.findall(r'static readonly (\w+) = "(olivares_zombie:\w+)"', body):
+            for k, v in re.findall(r'static readonly (\w+) = "(olivares_zomblocks:\w+)"', body):
                 out['%s.%s' % (c.group(1), k)] = v
     return out
 
@@ -212,8 +227,8 @@ TS_CONSTANTS = ts_constants()
 
 
 def class_type_id(body):
-    """the zombie id a class is for: typeId = "olivares_zombie:x" or typeId = Some.CONSTANT"""
-    m = re.search(r'typeId = "olivares_zombie:(\w+)"', body)
+    """the zombie id a class is for: typeId = "olivares_zomblocks:x" or typeId = Some.CONSTANT"""
+    m = re.search(r'typeId = "olivares_zomblocks:(\w+)"', body)
     if m:
         return m.group(1)
     m = re.search(r'typeId = (\w+\.\w+);', body)
@@ -358,7 +373,7 @@ def loot_sources():
 def recipes():
     """result item id -> [(ingredient id, count)]"""
     out = {}
-    for f in glob.glob(os.path.join(BP, 'recipes', '*.json')):
+    for f in glob.glob(os.path.join(BP, 'recipes', '**', '*.json'), recursive=True):
         d = jload(f)
         key = next(k for k in d if k.startswith('minecraft:recipe'))
         r = d[key]
@@ -476,10 +491,10 @@ def mod_catalog():
         mods.append(dict(id=int(m.group(1)), key=m.group(2), name=m.group(3), part=m.group(4), part_name=m.group(5),
                          scrap=int(m.group(6)), effect=m.group(7), letter=letters[int(m.group(1))]))
     moddable = {}
-    for m in re.finditer(r'"olivares_zombie:(\w+)": \{ index: (\d+), name: "([^"]+)" \}', src):
+    for m in re.finditer(r'"olivares_zomblocks:(\w+)": \{ index: (\d+), name: "([^"]+)" \}', src):
         moddable[m.group(1)] = int(m.group(2))
     signatures = [dict(weapon=m.group(1), mod=int(m.group(2)), text=m.group(3))
-                  for m in re.finditer(r'\{ weapon: "olivares_zombie:(\w+)", mod: (\d+), text: "([^"]+)" \}', src)]
+                  for m in re.finditer(r'\{ weapon: "olivares_zomblocks:(\w+)", mod: (\d+), text: "([^"]+)" \}', src)]
     costs = [(int(a), int(b)) for a, b in re.findall(r'\{ tape: (\d+), scrap: (\d+) \}', src)]
     bonus = float(re.search(r'REINFORCE_BONUS = ([\d.]+)', src).group(1))
     # shuriken mods (Fabricator, shurikens in hand; src/weapons/mods/ShurikenMods.ts): every hit, script only

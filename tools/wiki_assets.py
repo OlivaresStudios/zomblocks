@@ -62,17 +62,17 @@ def model_bundle(z, geos, anims):
                 textures=[data_uri(os.path.join(W.RP, s + '.png')) for s in z['skins']], anims=used)
 
 
-WEAPON_FX = 'animation.olivares_zombie.weapon_mods.fx'
+WEAPON_FX = 'animation.olivares_zomblocks.weapon_mods.fx'
 
 
 def weapon_geo_tex(w):
     """(geometry dict, texture path, render kind) of a weapon: its 3D attachable, or the entity model of thrown ones"""
     if w['model'] == 'attachable':                       # the file itself: M.rp_model strips the mod bones
-        geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'attachables', 'olivares_zombie', w['id'] + '.geo.json'), encoding='utf-8'))
-        return geo, os.path.join(W.RP, 'textures', 'attachables', 'olivares_zombie', w['id'] + '.png')
+        geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'olivares', 'zomblocks', 'attachables', w['id'] + '.geo.json'), encoding='utf-8'))
+        return geo, os.path.join(W.RP, 'textures', 'olivares', 'zomblocks', 'attachables', w['id'] + '.png')
     name = w['model'].split(':', 1)[1]
-    geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'olivares_zombie', name + '.geo.json'), encoding='utf-8'))
-    return geo, os.path.join(W.RP, 'textures', 'entity', 'olivares_zombie', name + '.png')
+    geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'olivares', 'zomblocks', name + '.geo.json'), encoding='utf-8'))
+    return geo, os.path.join(W.RP, 'textures', 'olivares', 'zomblocks', 'entity', name + '.png')
 
 
 def weapon_view(w):
@@ -133,7 +133,7 @@ def three_classic(src, dst):
 def build(out, zombies, renders=True):
     geos, anims = W.geometries(), W.animations()
     # item icons + spawn eggs (copied as they are; shown pixelated)
-    for sub, src in (('items', 'textures/items/olivares_zombie'), ('eggs', 'textures/items/olivares_zombie/eggs')):
+    for sub, src in (('items', 'textures/olivares/zomblocks/items'), ('eggs', 'textures/olivares/zomblocks/items/eggs')):
         d = os.path.join(out, 'img', sub)
         os.makedirs(d, exist_ok=True)
         for f in os.listdir(os.path.join(W.RP, src)):

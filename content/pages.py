@@ -2,7 +2,7 @@
 add-on code on 05/10/2026 (zombie_BP/src); prices, odds, lists, health... are NOT written here: the build reads them.
 Re-check these texts when the matching system changes."""
 
-ARMOR_INTRO = ('Armor in Zombie Extraction is worn like vanilla armor and shows in 3D on you. Each piece protects you; '
+ARMOR_INTRO = ('Armor in Zomblocks is worn like vanilla armor and shows in 3D on you. Each piece protects you; '
                'wear the full set and you also get its set bonus, shown in your action bar when it turns on.')
 
 # set key -> what the bonus really does (Armor Sets code)
@@ -150,7 +150,8 @@ ACHIEVEMENTS_INTRO = ('23 achievements to unlock. Open the achievement menu with
 FIRST_NIGHT = [
     ('Read the guidebook', 'You get the Zombie Guidebook the first time you join. Use it: a big book floats in front of '
                            'you. Right click turns the page, punch goes back, sneak + right click jumps to the next '
-                           'chapter. It has a page for every zombie, weapon and item.'),
+                           'chapter. It has a page for every zombie, weapon and item. Hold it in your hand: it is also a '
+                           'radio whose compass points to the nearest town.'),
     ('Grab a weapon', 'A baseball bat, a golf club or a frying pan is enough for the first zombies. Duffel bags and supply '
                       'crates often hold one; the Brawler and the Camp Guard sell them for 5 scrap.'),
     ('Search everything', 'Trash cans, vases, duffel bags, cardboard boxes and toolboxes can be searched (right click). '
@@ -183,4 +184,166 @@ GARAGE_EXAMPLES = [
     ('gar_paint', 'Dye cards show the painted buggy; APPLIED is the current paint.'),
     ('gar_trunk', 'The Big Trunk needs the Trunk first.'),
     ('gar_repair', 'Service: repair the hull with a wrench, or pack the buggy up.'),
+]
+
+# ------------------------------------------------------------------------------------------------ mechanics & combos
+# Read in the code on 08/10/2026 (props/GasColumn.ts, core/Explosions.ts, props/VirusBarrel.ts, props/OxygenTank.ts,
+# status/Electricity.ts, blocks/ElectricFence.ts, status/StatusEffects.ts, zombies/Lures.ts, props/*.ts, items/Survival.ts).
+MECHANICS_INTRO = ('The systems of Zomblocks talk to each other: water carries electricity, explosions set off other '
+                   'explosions, frost makes zombies brittle, noise pulls the horde. Here are the tricks worth knowing.')
+# (anchor, title, colour, intro, [combo]); combo = (name, [item icons], text, note or None)
+MECHANICS = [
+    ('explosions', 'Explosions', 'var(--red)', 'Gas, barrels and tanks are waiting to be set off. Survivors and allies are '
+     'only pushed by them, never hurt (except by the plague of a virus barrel).', [
+        ('Gas Column + Lighter', ['gas_column', 'lighter'],
+         'Step 1: hit the gas column once (a melee hit or any projectile): it starts leaking gas for 30 seconds and pushes '
+         'back everything around it.\nStep 2: while it leaks, set it on fire with a Lighter (from up to 4 blocks), the '
+         'Flamethrower or any projectile.\nBOOM: 14 damage in a 6 block radius, a huge knock back, and every zombie caught '
+         'in it burns for 5 seconds.',
+         'A lighter does nothing to a gas column that is not leaking: break it open first. After 30 seconds of leaking it '
+         'is empty and will not explode any more.'),
+        ('Speaker + Gas Column', ['portable_speaker', 'gas_column'],
+         'Place a Portable Speaker next to a gas column: for 15 seconds every zombie within 20 blocks gathers around it. '
+         'Break the column open, step back, light it.', None),
+        ('Chain reactions', ['grenade_launcher', 'virus_barrel', 'oxygen_tank'],
+         'Every explosion sets off the explosive props in its radius: gas columns (even unbroken ones), virus barrels and '
+         'oxygen tanks. The Boom Launcher (12 damage in 4.5 blocks), Fireworks, virus bombs and exploding zombies all '
+         'count. Line them up: one shot clears the street, and unlocks the Chain Reaction achievement.', None),
+        ('Virus Barrel', ['virus_barrel'],
+         'Two melee hits, one projectile, a flame or an explosion and it bursts: 10 damage in 5 blocks, and every zombie '
+         'it hits catches the plague. The plague hurts for 6 seconds and jumps to the nearest zombie, up to 3 times. A '
+         'toxic cloud stays for a few seconds.',
+         'Stand back: survivors within 3 blocks of the burst get +15 infection.'),
+        ('Oxygen Tank', ['oxygen_tank'],
+         'Hit the valve (or catch it in an explosion): it shoots off and bounces around for 2.5 seconds, ramming every '
+         'zombie on its way (4 damage each), then bursts. Hit 3 zombies with one tank for the Pinball Wizard achievement.',
+         None),
+    ]),
+    ('water', 'Water + electricity', 'var(--blue)', 'A wet zombie takes double electric damage and stays shocked twice as '
+     'long. Water also puts out burning zombies: do not soak the ones you set on fire.', [
+        ('How to soak them', ['water_pistol', 'garden_hose', 'water_flask', 'sprinkler'],
+         'Water Pistol and Garden Hose: wet for 10 seconds. A splash of the Water Flask: 10 seconds, 3 blocks around. The '
+         'Sprinkler soaks everything within 4 blocks every second. The buggy\'s Water Cannon: 10 seconds. A zombie '
+         'standing in water is always wet.', None),
+        ('Electric Fence + Sprinkler', ['electric_fence', 'sprinkler'],
+         'The fence zaps whatever touches it twice a second: 3 damage and a short shock to a zombie. Next to a sprinkler '
+         'the zombies are always wet: 6 damage every zap. Survivors only get a small shock. Right click the fence to '
+         'switch it on or off.', None),
+        ('Garden Hose + Electric Bomb', ['garden_hose', 'electric_bomb'],
+         'The Electric Bomb shocks every zombie within 4.5 blocks, 7 blocks if it lands in water: 3 damage and 2.5 seconds '
+         'of shock, both doubled on wet zombies.', None),
+        ('Water Pistol + Taser Gun', ['water_pistol', 'taser_gun'],
+         'The taser paralyses a zombie for 3 seconds. Soaked, it stays paralysed 6 seconds and takes double damage.', None),
+        ('Water Cannon + Electric Aura', ['rusty_buggy'],
+         'Two buggy modules that love each other: the Water Cannon soaks the zombies, the Electric Aura (every 2 seconds, '
+         '10 blocks around the buggy) then hits them twice as hard.', None),
+    ], ),
+    ('frost', 'Freeze & shatter', 'var(--blue)', 'Frost builds up on a zombie until it is frozen solid for 3 seconds. A '
+     'frozen zombie takes 50% more damage from melee hits.', [
+        ('Freeze, then hit', ['freeze_blaster', 'baseball_bat'],
+         'The Freezing Blaster adds frost with every puff of nitrogen. Once the zombie is frozen, switch to your strongest '
+         'melee weapon. Keep 3 zombies frozen at once for the Ice Age achievement.', None),
+        ('Frost mod', ['ice_pack'],
+         'A melee weapon with the Frost mod adds a big chunk of frost on half of your hits: three of them freeze a zombie. '
+         'On the Hockey Stick, every puck freezes a common zombie at once, even after a bounce.', None),
+        ('Stay warm', ['hot_soup', 'instant_noodles', 'hot_chocolate'],
+         'Frost works on you too. Hot Soup (30 s), Instant Noodles (20 s) and Hot Chocolate (45 s) keep you warm: no '
+         'frost while it lasts.', None),
+    ]),
+    ('lures', 'Lures', 'var(--yellow)', 'Zombies walk to noise and light. Pull a horde away from you, or into a trap. '
+     'Bosses never fall for it.', []),
+    ('traps', 'Traps & gadgets', 'var(--green)', 'Things to place, throw and switch on before the horde arrives.', []),
+    ('tricks', 'Did you know?', 'var(--purple)', 'Small things that make a big difference.', []),
+]
+# lures: (icon, name, how far, how long)
+LURES = [
+    ('sound_decoy', 'Sound Decoy (thrown)', '16 blocks', '3 s'),
+    ('portable_speaker', 'Portable Speaker (placed)', '20 blocks', '15 s'),
+    ('flare', 'Flare (thrown, also lights up)', '32 blocks', '20 s'),
+    ('birthday_cake', 'Birthday Cake (when you place it)', '20 blocks', '10 s'),
+    ('fireworks', 'Fireworks (where the rocket bursts)', '16 blocks', '4 s'),
+    ('air_horn', 'Air Horn (zombies within 7 blocks are stunned instead)', '7 to 32 blocks', '3 s'),
+    ('rusty_buggy', 'Buggy Warning Lights module', '25 blocks', 'while installed'),
+]
+LURES_NOTE = ('Firefighter zombies put flares out with their water jet, and the Warden\'s whistle switches off fences and '
+              'gadgets around him for 15 seconds.')
+LURE_COMBOS = [
+    ('Flare + Barbed Wire', ['flare', 'barbed_wire'],
+     'Throw a flare behind a line of barbed wire: every zombie within 32 blocks walks through it, slowed down and hurt '
+     'every second.', None),
+    ('Air Horn + Fan Propeller', ['air_horn', 'fan_propeller'],
+     'Call the horde with the horn, then switch the fan on: they are blown far away. Even better near a cliff.', None),
+]
+# traps & gadgets: (icon, name, text)
+TRAPS = [
+    ('light_projector', 'Light Projector', 'Right click to switch it on. Zombies in its 11 block beam slow down, then catch '
+                                           'fire after 4 seconds.'),
+    ('fan_propeller', 'Fan Propeller', 'Right click: an 8 second storm that blows zombies far away. Push them off a cliff '
+                                       'or onto a trap.'),
+    ('motion_sensor', 'Motion Sensor', 'Marks every zombie passing within 12 blocks and beeps to warn you, even when you '
+                                       'are 64 blocks away.'),
+    ('banana', 'Banana Peel', 'Eat a banana, keep the peel. Throw it at a zombie or drop it on its path: it slips, takes '
+                              '2 damage and stays down for 2.5 seconds.'),
+    ('bowling_ball', 'Bowling Ball', '6 damage on impact, then it rolls on and knocks down every zombie on its way. Five '
+                                     'at once: STRIKE!'),
+    ('shopping_cart', 'Shopping Cart', 'Hit it to shove it into the horde: the faster it goes, the harder it rams.'),
+    ('net_launcher', 'Net Launcher', 'Pins a zombie to the ground for 3 seconds (a boss for 1 second).'),
+    ('unstable_floor', 'Unstable Floor', 'Collapses under anyone who steps on it, zombies included, and the cracks spread '
+                                         'to the next blocks. It rebuilds after a minute.'),
+    ('glue_puddle', 'Glue Puddle', 'Zombies in it barely move (bosses are only slowed). It dries after 30 seconds.'),
+    ('barbed_wire', 'Barbed Wire', 'Slows zombies a lot and hurts them every second; survivors are only slowed. It wears '
+                                   'out as they cross it.'),
+]
+# did you know: (icon, title, text)
+TRICKS = [
+    ('ninja_helmet', 'Sneak past the Blind', 'The Blind hunt by ear and never notice a survivor who sneaks. Sprinting is '
+                                             'heard 14 blocks away, a melee hit 8, a weapon\'s right click 20.'),
+    ('barricade', 'Bashing', 'A zombie stuck in front of a barricade, weak glass or furniture soon starts bashing it. The '
+                             'Lumberjack and the Zomboni smash through at once.'),
+    ('fire_axe', 'Fire Axe', 'One hit smashes a barricade or a weak glass block (they take 4 and 3 hits otherwise).'),
+    ('flashlight', 'Flashlight', 'Its beam dazzles and pushes back Night Creepers and the Blind, but it makes noise.'),
+    ('fire_extinguisher', 'Doused', 'A Firefighter zombie\'s jet soaks you: your flamethrower and lighter will not light '
+                                    'for 4 seconds.'),
+    ('chewing_gum', 'Chewing Gum', 'Your next melee hit glues the zombie in place for 2 seconds.'),
+    ('spicy_chili', 'Spicy Chili', 'Your next left click breathes fire on the zombies in front of you.'),
+    ('lucky_coin', 'Lucky Coin', 'Keep it in your inventory: 35% chance of a bonus drop from every zombie you kill.'),
+    ('combat_umbrella_open', 'Combat Umbrella', 'Open, it slows your fall like a small parachute.'),
+    ('shopping_crate', 'Thrown furniture', 'Carry a piece of furniture and attack: it hits for 3 damage plus 2 per weight '
+                                           'point.'),
+]
+
+# ------------------------------------------------------------------------------------------------ towns & radio
+# Read in the code on 08/10/2026 (towns/Towns.ts, towns/TownRadio.ts, status/InfectionMonitor.ts, spawning/SpawnDirector.ts).
+TOWNS_INTRO = ('Five kinds of towns are scattered across the world, each with its own buildings, loot and dangers. Your '
+               'Zombie Guidebook is also a radio that leads you to them.')
+# town key -> what you find there (zombie_structures/buildings/<town>)
+TOWN_TEXTS = {
+    'haven_hill': 'A walled settlement on the hills: council house, infirmary, workshop, pantry and houses behind the '
+                  'palisade.',
+    'ashford': 'The ruins of a city: an abandoned apartment building, a police station and a looted supermarket.',
+    'pinecrest': 'A village in the pines with its fire station, a roadside motel and a school.',
+    'greywater': 'A flooded town where nature took over: overgrown towers of 6 and 8 floors and an old gas station.',
+    'verdance': 'A modern town: a 10 floor white tower, a museum and an airfield hangar.',
+}
+RADIO_HOW = [
+    ('Hold the guidebook', 'Hold the Zombie Guidebook in your main hand: the compass on its cover points to the nearest town '
+                           'you have not discovered yet, and the action bar shows the signal, the town and the distance.'),
+    ('Read the signal', 'The closer you get, the more bars light up: 4 bars under 250 m, 3 under 600 m, 2 under 1000 m, '
+                        '1 beyond. "Weak signal" with a distance: the radio hears a town there but does not know which '
+                        'one yet.'),
+    ('Discover the town', 'Walk within 72 blocks of its centre. The monitor next to your left hand shows TOWN DISCOVERED '
+                          'with the name of the town, with a little jingle.'),
+    ('Wait for the next one', 'Right after a discovery the radio loses the signal for about 3 minutes: the needle spins and '
+                              'the bar shows "Weak signal". Then it points to the next town you have not found yet.'),
+]
+TOWN_FACTS = [
+    ('More zombies', 'Inside a town up to 10 zombies roam around you by day and 18 at night (4 and 10 in the wild). Town '
+                     'zombies like Riot Cops, Firefighters and Mailmen are twice as common there, and the elite Tanks only '
+                     'walk the streets of a town at night.'),
+    ('Loot', 'Loot chests, searchable trash cans, boxes and bags (they restock after 5 minutes) and furniture in every '
+             'house.'),
+    ('Manholes', 'Zombies climb out of the manholes in the streets while you are around. Right click one with duct tape to '
+                 'seal it for good.'),
+    ('Elevators', 'The tall buildings have elevator pads: jump to go up, sneak to go down, right click for the list of '
+                  'floors. Zombies cannot use them.'),
 ]

@@ -353,7 +353,7 @@ def achievements_page(B):
 
 
 def guide_page(B):
-    links = {'Read the guidebook': None, 'Grab a weapon': '../weapons/index.html', 'Search everything': '../world.html',
+    links = {'Read the guidebook': '../towns.html', 'Grab a weapon': '../weapons/index.html', 'Search everything': '../world.html',
              'Collect scrap': '../traders.html', 'Do not get bitten': '../infection.html', 'Find a friend': '../allies.html',
              'Barricade': '../furniture.html', 'Know your enemy': '../zombies/index.html'}
     pics = {'Read the guidebook': '../img/items/guidebook.png', 'Grab a weapon': '../img/w/baseball_bat.png', 'Search everything': '../img/world/toolbox.png',
@@ -365,7 +365,7 @@ def guide_page(B):
         out.append('<div class="box" style="display:grid;grid-template-columns:110px 1fr;gap:16px;align-items:center"><div style="text-align:center"><img src="%s" alt="" style="%s"></div><div><span class="step" style="font:700 11px Inter,sans-serif;color:var(--green);letter-spacing:.12em">STEP %d</span><h3 style="margin:4px 0">%s</h3><p>%s%s</p></div></div>' % (
             pics[t], 'width:80px;height:80px;image-rendering:pixelated' if pics[t].endswith('guidebook.png') else 'max-height:100px;max-width:110px',
             i + 1, E(t), E(x), more))
-    page(B, 'guides/first-night.html', 'Your first night', 'guides/first-night', [], 'New to Zombie Extraction? Eight steps to survive your first night.', ''.join(out))
+    page(B, 'guides/first-night.html', 'Your first night', 'guides/first-night', [], 'New to Zomblocks? Eight steps to survive your first night.', ''.join(out))
 
 
 # ------------------------------------------------------------------------------------------------ search entries

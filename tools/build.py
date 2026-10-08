@@ -1,4 +1,4 @@
-"""Builds the Zombie Extraction wiki into zombie_wiki/public/ (static pages: open public/index.html, no server needed).
+"""Builds the Zomblocks wiki into zombie_wiki/public/ (static pages: open public/index.html, no server needed).
 
     python tools/build.py              # everything (renders take about a minute)
     python tools/build.py --fast       # pages only, keeps the renders already made
@@ -23,14 +23,15 @@ THREAT_WORDS = {1: 'Low', 2: 'Medium', 3: 'High', 4: 'Very high', 5: 'Deadly'}
 
 # sidebar: (group, [(slug, title, icon, count)]); a slug without a built page is shown as "soon"
 SECTIONS = [
-    ('Start here', [('index', 'Home', 'img/items/guidebook.png', None), ('guides/first-night', 'Your first night', 'img/items/canned_beans.png', None)]),
+    ('Start here', [('index', 'Home', 'img/items/guidebook.png', None), ('guides/first-night', 'Your first night', 'img/items/canned_beans.png', None),
+                    ('mechanics', 'Mechanics & combos', 'img/items/gas_column.png', None)]),
     ('Threats', [('zombies/index', 'Zombies', 'img/eggs/zombie_mime.png', 60), ('bosses/index', 'Bosses', 'img/eggs/zombie_conductor.png', 8),
                  ('infection', 'Infection', 'img/items/medicine.png', None)]),
     ('Gear', [('weapons/index', 'Weapons', 'img/items/baseball_bat.png', 43), ('mods', 'Weapon mods & Fabricator', 'img/items/electric_cable.png', None),
               ('armor/index', 'Armor sets', 'img/items/biker_chest.png', 12), ('food', 'Food & medical', 'img/items/first_aid_kit.png', None),
               ('gear', 'Survival gear', 'img/items/flashlight.png', None)]),
     ('People', [('traders', 'Traders', 'img/items/scrap.png', 8), ('allies', 'Allies', 'img/items/whistle.png', None)]),
-    ('World', [('buggy', 'Rusty Buggy', 'img/items/rusty_buggy.png', None), ('world', 'Loot & world', 'img/eggs/toolbox.png', None),
+    ('World', [('towns', 'Towns & radio', 'img/items/guidebook.png', 5), ('buggy', 'Rusty Buggy', 'img/items/rusty_buggy.png', None), ('world', 'Loot & world', 'img/eggs/toolbox.png', None),
                ('furniture', 'Furniture', 'img/eggs/armchair.png', 17), ('achievements', 'Achievements', 'img/items/lucky_coin.png', 23)]),
 ]
 # what the coming sections will hold (shown on their "coming soon" page)
@@ -100,15 +101,15 @@ def layout(rel, title, body, active, scripts=''):
                 side.append('<a%s href="%s%s" style="color:var(--dim)">%s%s<span class="n" style="font-size:9px;letter-spacing:.12em">SOON</span></a>' % (on, root, url(slug), img, E(name)))
     return '''<!doctype html>
 <html lang="en" data-root="%(root)s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>%(title)s - Zombie Extraction Wiki</title>
+<title>%(title)s - Zomblocks Wiki</title>
 <link rel="icon" href="%(root)simg/eggs/zombie_mime.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="%(root)scss/fonts.css">
 <link rel="stylesheet" href="%(root)scss/wiki.css"></head><body>
-<header class="top"><button class="menu-btn" id="menu">Menu</button><a class="logo" href="%(root)sindex.html"><span class="biohaz"></span><span class="full">ZOMBIE EXTRACTION</span><small>WIKI</small></a>
+<header class="top"><button class="menu-btn" id="menu">Menu</button><a class="logo" href="%(root)sindex.html"><span class="biohaz"></span><span class="full">ZOMBLOCKS</span><small>WIKI</small></a>
 <div class="search"><input id="q" type="search" placeholder="Search zombies, bosses, weapons..." autocomplete="off"><kbd>/</kbd><div class="results" id="results"></div></div>
 <nav class="topnav"><a href="%(root)sindex.html"%(home_on)s>Wiki</a><a href="%(root)szombies/index.html">Zombies</a><a href="%(root)sbosses/index.html">Bosses</a></nav></header>
 <div class="wrap"><nav class="side">%(side)s</nav><main class="main">%(body)s
-<footer><span>Zombie Extraction Wiki &middot; every number comes from the add-on itself</span><span>Updated %(date)s</span><span>PEGI 10</span></footer></main></div>
+<footer><span>Zomblocks Wiki &middot; every number comes from the add-on itself</span><span>Updated %(date)s</span><span>PEGI 10</span></footer></main></div>
 <script src="%(root)sjs/search-index.js"></script><script src="%(root)sjs/wiki.js"></script>%(scripts)s
 </body></html>
 ''' % dict(root=root, title=E(title), side=''.join(side), body=body, date=datetime.date.today().strftime('%d %b %Y'),
@@ -428,7 +429,7 @@ def build_rows():
     import make_fabricator as MF
     rows = []
     for key, name, count, effect, parts in MF.BLOCK_RECIPES:
-        cost = ' + '.join('%d %s' % (n, W.item_name('olivares_zombie:' + it)) for it, n in parts)
+        cost = ' + '.join('%d %s' % (n, W.item_name('olivares_zomblocks:' + it)) for it, n in parts)
         rows.append('<div class="item"><img class="pix" src="img/items/%s.png" alt="" style="width:28px;height:28px"><b>%s x%d</b><span style="margin-left:12px;color:var(--soft)">%s</span><span>%s</span></div>' % (
             key, E(name), count, E(effect), E(cost)))
     return ''.join(rows)
@@ -459,7 +460,7 @@ def mods_page(ws, mods, finder, by_id):
     steps = ''.join('<div class="phase" style="border-color:var(--yellow)"><b style="color:var(--yellow)">%d. %s</b><p>%s</p></div>' % (i + 1, E(t), E(x)) for i, (t, x) in enumerate(C.HOW_TO))
     levels = ''.join('<div class="item"><b style="font-family:var(--px)">Reinforced %s</b><span style="margin-left:12px;color:var(--soft)">+%d%% durability</span><span>%d duct tape + %d scrap</span></div>' % (
         'I' * (i + 1), round(mods['reinforce_bonus'] * 100 * (i + 1)), t, s) for i, (t, s) in enumerate(mods['reinforce']))
-    fab = finder.find('olivares_zombie:fabricator')
+    fab = finder.find('olivares_zomblocks:fabricator')
     body = '''<div class="crumbs"><a href="index.html">Wiki</a> / <b>Weapon mods &amp; Fabricator</b></div>
 <div class="entry"><div><div class="title"><h1>Weapon mods &amp; Fabricator</h1></div><p class="lead">%(intro)s</p>
 <div class="box"><h3>How to use the Fabricator</h3>%(steps)s<h3 style="margin-top:14px">What the panel shows</h3>%(examples)s</div>
@@ -485,6 +486,8 @@ def home(zs, by_id, counts):
     hero = by_id['zombie_conductor']
     soon = lambda slug: slug not in BUILT  # noqa: E731
     browse = ''.join([
+        card(url('mechanics'), 'img/world/gas_column.png', 'Mechanics & combos', 'Explosions, water + electricity, lures, traps'),
+        card(url('towns'), 'img/towns/haven_hill.png', 'Towns & radio', 'Find the 5 towns with the guidebook', 5),
         card('zombies/index.html', zimg(by_id['zombie_mime']), 'Zombies', 'Threat, abilities, counters', counts['zombies']),
         card('bosses/index.html', zimg(by_id['zombie_slender']), 'Bosses', '3D models, teams, loot', counts['bosses']),
         card(url('weapons/index'), 'img/misc/weapons.png', 'Weapons', 'Damage, durability, where to find', counts['weapons'], soon('weapons/index')),
@@ -497,7 +500,7 @@ def home(zs, by_id, counts):
     boss_row = ''.join('<a href="%s"><img src="%s" alt="" loading="lazy"><b>%s</b></a>' % (zurl(b), zimg(b), E(b['name'])) for b in bosses)
     body = '''<section class="hero"><div class="txt"><span class="tag">&#9763; OUTBREAK DATABASE</span>
 <h1>Know what's<br><span>coming for you.</span></h1>
-<p>Every zombie, boss, weapon and trick of Zombie Extraction, with the real stats taken straight from the add-on. Look up a threat before it looks you up.</p>
+<p>Every zombie, boss, weapon and trick of Zomblocks, with the real stats taken straight from the add-on. Look up a threat before it looks you up.</p>
 <div class="stats"><div class="stat"><b>%(zombies)d</b><span>zombies</span></div><div class="stat"><b>%(variants)d</b><span>variants</span></div><div class="stat"><b>%(bosses)d</b><span>bosses</span></div><div class="stat"><b>%(weapons)d</b><span>weapons</span></div><div class="stat"><b>%(armor)d</b><span>armor sets</span></div></div></div>
 <div class="art"><img class="bar pix" src="img/bossbars/%(hero)s.png" alt=""><a class="who" href="%(hero_url)s"><img src="%(hero_img)s" alt="%(hero_name)s"></a></div></section>
 <div class="sec"><h2>Browse the outbreak</h2><div class="cards">%(browse)s</div></div>
@@ -547,7 +550,7 @@ def main():
     if not fast and os.path.isdir(OUT):
         shutil.rmtree(OUT, ignore_errors=True)            # a folder held by OneDrive or a browser stays: files are rewritten anyway
     os.makedirs(OUT, exist_ok=True)
-    for sub in ('css', 'js'):
+    for sub in ('css', 'js', 'fonts'):
         shutil.copytree(os.path.join(WEB, sub), os.path.join(OUT, sub), dirs_exist_ok=True)
     A.build(OUT, zs, renders=not fast)
     finder = W.Finder(zs)
@@ -576,7 +579,10 @@ def main():
     build2.furniture_pages(me, furn)
     build2.achievements_page(me)
     build2.guide_page(me)
-    extra = build2.search_entries(sets, furn)
+    import build3
+    build3.mechanics_page(me)
+    build3.towns_page(me, fast)
+    extra = build2.search_entries(sets, furn) + build3.search_entries()
     for z in zs:
         (boss_page(z, by_id) if z['kind'] == 'boss' else zombie_page(z, by_id, zs))
     zombie_list(zs)

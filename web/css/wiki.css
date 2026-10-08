@@ -1,4 +1,4 @@
-/* Zombie Extraction Wiki - "quarantine terminal" theme (colours of the infection monitor) */
+/* Zomblocks Wiki - "quarantine terminal" theme (colours of the infection monitor) */
 :root{--bg:#0b100e;--bg2:#0d1411;--panel:#121a16;--panel2:#18231e;--line:#24332c;--text:#e6efe9;--soft:#b9c9c0;--muted:#8ea197;--dim:#61766b;
 --green:#5aff82;--yellow:#ffd63c;--red:#ff543c;--deep:#e11e2e;--pink:#ff5c78;--blue:#6ebeff;--purple:#c79bff;--px:"Pixelify Sans",ui-monospace,"Cascadia Mono",Consolas,monospace}
 *{box-sizing:border-box}
