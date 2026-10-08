@@ -12,7 +12,7 @@ from wiki_assets import INK, data_uri, save
 
 M = W.M
 G = M.G
-MANNEQUIN = 'textures/olivares/zomblocks/entity/survivor_student'
+MANNEQUIN = 'textures/olivares/zomblocks/entity/npcs/survivor_student'
 
 
 def tex_of(path):
@@ -72,8 +72,8 @@ def entity_render(geometry, texture, geos, box=(300, 300), yaw=30, pitch=20):
 
 
 # example hologram screens (card + status strip, as seen in game): (file name, card texture, status texture)
-FAB = 'textures/olivares/zomblocks/entity/fabricator/'
-GAR = 'textures/olivares/zomblocks/entity/buggy/garage/'
+FAB = 'textures/olivares/zomblocks/entity/props/fabricator/'
+GAR = 'textures/olivares/zomblocks/entity/props/buggy/garage/'
 HOLO_EXAMPLES = {
     'fab_ready': (FAB + 'card_2', FAB + 'status_1'),
     'fab_missing': (FAB + 'card_4', FAB + 'status_6'),
@@ -113,7 +113,7 @@ def fabricator_bundle(geos, anims):
     def layer(geo_key, tex):
         return dict(geo=geo_doc(geos[panel['geometry'][geo_key]]), texture=data_uri(os.path.join(W.RP, tex + '.png')),
                     offset=up, additive=True, anim=clip)
-    d = 'textures/olivares/zomblocks/entity/fabricator/'
+    d = 'textures/olivares/zomblocks/entity/props/fabricator/'
     return dict(geo=geo_doc(geos[ent['geometry']['default']]), textures=[data_uri(os.path.join(W.RP, ent['textures']['default'] + '.png'))],
                 anims={'bench': anims.get(ent['animations']['bench'], {})}, view=dict(yaw=-0.45, pitch=0.12, zoom=1.05),
                 layers=[layer('card', d + 'card_0'), layer('status', d + 'status_1'), layer('h3', d + 'holo_katana')])

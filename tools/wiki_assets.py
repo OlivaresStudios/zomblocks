@@ -68,11 +68,11 @@ WEAPON_FX = 'animation.olivares_zomblocks.weapon_mods.fx'
 def weapon_geo_tex(w):
     """(geometry dict, texture path, render kind) of a weapon: its 3D attachable, or the entity model of thrown ones"""
     if w['model'] == 'attachable':                       # the file itself: M.rp_model strips the mod bones
-        geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'olivares', 'zomblocks', 'attachables', w['id'] + '.geo.json'), encoding='utf-8'))
-        return geo, os.path.join(W.RP, 'textures', 'olivares', 'zomblocks', 'attachables', w['id'] + '.png')
-    name = w['model'].split(':', 1)[1]
-    geo = json.load(open(os.path.join(W.RP, 'models', 'entity', 'olivares', 'zomblocks', name + '.geo.json'), encoding='utf-8'))
-    return geo, os.path.join(W.RP, 'textures', 'olivares', 'zomblocks', 'entity', name + '.png')
+        geo = json.load(open(W.locate('models/entity/olivares/zomblocks/attachables/%s.geo.json' % w['id']), encoding='utf-8'))
+        return geo, W.locate('textures/olivares/zomblocks/attachables/%s.png' % w['id'])
+    name = w['model'].split(':', 1)[1]                  # props/ or projectiles/
+    geo = json.load(open(W.locate('models/entity/olivares/zomblocks/%s.geo.json' % name), encoding='utf-8'))
+    return geo, W.locate('textures/olivares/zomblocks/entity/%s.png' % name)
 
 
 def weapon_view(w):

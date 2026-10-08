@@ -47,6 +47,17 @@ def load_module(path, name):
 CONTENT_BOSSES = load_module(os.path.join(WIKI, 'content', 'bosses.py'), 'wiki_content_bosses').BOSSES
 
 
+def locate(rel):
+    """the RP file `rel` (e.g. models/entity/olivares/zomblocks/gas_column.geo.json) wherever it is in the category
+    sub-folders of its folder (props/, projectiles/, npcs/, weapons/, gear/...)"""
+    folder, name = os.path.split(os.path.join(RP, rel))
+    for dirpath, dirs, files in os.walk(folder):
+        dirs.sort()
+        if name in files:
+            return os.path.join(dirpath, name)
+    return os.path.join(RP, rel)
+
+
 def read(path):
     with open(path, encoding='utf-8') as fh:
         return fh.read()
