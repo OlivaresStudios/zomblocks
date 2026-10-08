@@ -13,6 +13,7 @@ Static wiki for players, generated from the add-on itself: open `public/index.ht
 - `design/wiki_mockup.html`: the validated mockup.
 - `tools/build3.py`: Mechanics & combos, Towns & radio (added 08/10/2026, texts in `content/pages.py`).
 - `tools/deploy.py`: publishes `public/` to the `gh-pages` branch (GitHub Pages, domain zomblocks.eu in `CNAME`).
+- `tools/hostinger_dns.py [--apply]`: points zomblocks.eu (DNS at Hostinger) to GitHub Pages, with the API token in `HOSTINGER_API_TOKEN`.
 
 The tools find the add-on next to this folder: `../zombie_tools` (or `../CLAUDE_TOOLS`), `../zombie_RP`, `../zombie_BP`;
 or set `ZOMBIE_TOOLS`, `ZOMBIE_RP`, `ZOMBIE_BP`. Fonts are self-hosted (`web/fonts`): the site makes no request to Google.
