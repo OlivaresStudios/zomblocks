@@ -159,7 +159,7 @@ HAZARDS = [
 ]
 
 FURNITURE_INTRO = ('Houses are full of furniture you can carry, throw and build barricades with. Every piece comes in '
-                   '4 colours.')
+                   '4 or 5 colours.')
 FURNITURE_HOW = [
     ('Carry', 'Look at a light piece of furniture and click it to pick it up. Sneak to put it down.'),
     ('Throw', 'Attack while carrying it: it flies and hits the first zombie, 3 damage + 2 per weight point.'),

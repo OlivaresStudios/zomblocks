@@ -103,14 +103,14 @@ def layout(rel, title, body, active, scripts=''):
     return '''<!doctype html>
 <html lang="en" data-root="%(root)s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>%(title)s - Zomblocks Wiki</title>
-<link rel="icon" href="%(root)simg/eggs/zombie_mime.png">
+<link rel="icon" href="%(root)sbrand/zomblocks_icon.png">
 <link rel="stylesheet" href="%(root)scss/fonts.css">
 <link rel="stylesheet" href="%(root)scss/wiki.css"></head><body>
-<header class="top"><button class="menu-btn" id="menu">Menu</button><a class="logo" href="%(root)sindex.html"><span class="biohaz"></span><span class="full">ZOMBLOCKS</span><small>WIKI</small></a>
+<header class="top"><button class="menu-btn" id="menu">Menu</button><a class="logo" href="%(root)sindex.html"><img class="brand-icon" src="%(root)sbrand/zomblocks_icon.png" alt=""><img class="brand-word full" src="%(root)sbrand/zomblocks_lockup.png" alt="Zomblocks"><small>WIKI</small></a>
 <div class="search"><input id="q" type="search" placeholder="Search zombies, bosses, weapons..." autocomplete="off"><kbd>/</kbd><div class="results" id="results"></div></div>
 <nav class="topnav"><a href="%(root)sindex.html"%(home_on)s>Wiki</a><a href="%(root)szombies/index.html">Zombies</a><a href="%(root)sbosses/index.html">Bosses</a></nav></header>
 <div class="wrap"><nav class="side">%(side)s</nav><main class="main">%(body)s
-<footer><span>Zomblocks Wiki &middot; every number comes from the add-on itself</span><span>Updated %(date)s</span><span>PEGI 10</span></footer></main></div>
+<footer><a class="studio" href="%(root)sindex.html"><img src="%(root)sbrand/olivares_logo.png" alt="">Olivares Studios</a><span>Zomblocks Wiki &middot; every number comes from the add-on itself</span><span>Updated %(date)s</span><span>PEGI 10</span></footer></main></div>
 <script src="%(root)sjs/search-index.js"></script><script src="%(root)sjs/wiki.js"></script>%(scripts)s
 </body></html>
 ''' % dict(root=root, title=E(title), side=''.join(side), body=body, date=datetime.date.today().strftime('%d %b %Y'),
@@ -230,17 +230,18 @@ def zombie_page(z, by_id, all_zombies):
         team = '<div class="box"><h3>Boss team</h3><p>%s calls it into its fights.</p><div class="mini"><a href="%s%s"><img src="%s%s" alt=""><b>%s</b></a></div></div>' % (
             E(boss['name']), root, zurl(boss), root, zimg(boss), E(boss['name']))
     rows = [('Threat', skulls(z['threat'])), ('Health', '%d &#10084;' % z['health']), ('Speed', E(z['speed'])), ('Damage', E(z['damage'])),
-            ('Infection', infection_text(z)), ('Height', '%g blocks' % round((z['height'] or 1.9) * z['scale'], 1)), ('Variants', str(len(z['skins'])))]
+            ('Infection', infection_text(z)), ('Height', '%g blocks' % round((z['height'] or 1.9) * z['scale'], 1))] + ([('Variants', str(len(z['skins'])))] if len(z['skins']) > 1 else [])
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <a href="index.html">Zombies</a> / <b>%(name)s</b></div>
 <div class="entry"><div><div class="title"><h1>%(name)s</h1></div><div class="title" style="margin-top:8px">%(chips)s</div>
 <p class="lead">%(lead)s</p>
 <div class="box"><h3>Abilities</h3>%(abilities)s</div>
 <div class="tip"><b>%(tip_title)s</b>%(tip)s</div>
-<div class="box"><h3>Variants</h3><p>Each one you meet wears one of these %(nvar)d outfits. Click one to see it in 3D.</p><div class="variants">%(variants)s</div></div>
+%(variants)s
 %(drops)s%(team)s
 <div class="box"><h3>Same threat level</h3><div class="mini">%(see)s</div></div>
 </div>%(info)s</div>''' % dict(name=E(z['name']), chips=''.join(chips), lead=lead, abilities=abilities, tip_title=E(z['tip_title'].upper()), tip=E(z['tip']),
-                               variants=variants, nvar=len(z['skins']), drops='<div class="box"><h3>Drops</h3>%s</div>' % drops if drops else '', team=team, see=see,
+                               variants=('<div class="box"><h3>Variants</h3><p>Each one you meet wears one of these %d outfits. Click one to see it in 3D.</p>'
+                                         '<div class="variants">%s</div></div>' % (len(z['skins']), variants)) if len(z['skins']) > 1 else '', drops='<div class="box"><h3>Drops</h3>%s</div>' % drops if drops else '', team=team, see=see,
                                info=infobox(z, root, rows))
     write(rel, layout(rel, z['name'], body, 'zombies/index', viewer_scripts(root, z)))
 
@@ -253,7 +254,7 @@ def zombie_list(zs):
         cards.append('<a class="card" href="%s" data-name="%s" data-threat="%d" data-health="%d" data-tags="%s"><div class="pic"><img src="../%s" alt="" loading="lazy"></div><h3>%s</h3><div class="meta">%s</div></a>' % (
             z['id'] + '.html', E(z['name']), z['threat'], z['health'], ' '.join(tags_of(z)), zimg(z), E(z['name']), sub))
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <b>Zombies</b></div>
-<div class="pagehead"><div><h1>Zombies</h1><p>%d kinds of infected, each in 3 variants. They come out on their own, more at night and in the <a href="../towns.html">towns</a>. Threat goes from 1 (a nuisance) to 5 (run). Bosses have <a href="../bosses/index.html">their own page</a>.</p></div></div>
+<div class="pagehead"><div><h1>Zombies</h1><p>%d kinds of infected. They come out on their own, more at night and in the <a href="../towns.html">towns</a>. Threat goes from 1 (a nuisance) to 5 (run). Bosses have <a href="../bosses/index.html">their own page</a>.</p></div></div>
 <div class="filters"><input id="ftext" type="search" placeholder="Filter by name..."><span class="lbl">Threat</span>%s<span class="lbl">Show</span>
 <button data-tag-btn="ranged">Ranged</button><button data-tag-btn="infects">Can infect</button><button data-tag-btn="team">Boss team</button>
 <span class="lbl">Sort</span><select id="fsort"><option value="threat">Threat</option><option value="health">Health</option><option value="name">Name</option></select>
@@ -513,10 +514,14 @@ def home(zs, by_id, counts):
         card(url('mods'), 'img/misc/fabricator.png', 'Fabricator', 'Mods and signature combos', None, soon('mods')),
     ])
     boss_row = ''.join('<a href="%s"><img src="%s" alt="" loading="lazy"><b>%s</b></a>' % (zurl(b), zimg(b), E(b['name'])) for b in bosses)
-    body = '''<section class="hero"><div class="txt"><span class="tag">&#9763; OUTBREAK DATABASE</span>
+    counts = dict(counts, variants_stat=('<div class="stat"><b>%d</b><span>variants</span></div>' % counts['variants'])
+                  if counts['variants'] > counts['zombies'] else '<div class="stat"><b>%d</b><span>boss lairs</span></div>' % len(W.lairs()))
+    body = '''<section class="hero"><div class="txt"><img class="hero-logo" src="brand/zomblocks_logo.png" alt="Zomblocks">
+<div class="by"><img src="brand/olivares_logo.png" alt="">An add-on by <b>Olivares Studios</b></div>
+<span class="tag">&#9763; OUTBREAK DATABASE</span>
 <h1>Know what's<br><span>coming for you.</span></h1>
 <p>Every zombie, boss, weapon and trick of Zomblocks, with the real stats taken straight from the add-on. Look up a threat before it looks you up.</p>
-<div class="stats"><div class="stat"><b>%(zombies)d</b><span>zombies</span></div><div class="stat"><b>%(variants)d</b><span>variants</span></div><div class="stat"><b>%(bosses)d</b><span>bosses</span></div><div class="stat"><b>%(weapons)d</b><span>weapons</span></div><div class="stat"><b>%(armor)d</b><span>armor sets</span></div></div></div>
+<div class="stats"><div class="stat"><b>%(zombies)d</b><span>zombies</span></div>%(variants_stat)s<div class="stat"><b>%(bosses)d</b><span>bosses</span></div><div class="stat"><b>%(weapons)d</b><span>weapons</span></div><div class="stat"><b>%(armor)d</b><span>armor sets</span></div></div></div>
 <div class="art"><img class="bar pix" src="img/bossbars/%(hero)s.png" alt=""><a class="who" href="%(hero_url)s"><img src="%(hero_img)s" alt="%(hero_name)s"></a></div></section>
 <div class="sec"><h2>Browse the outbreak</h2><div class="cards">%(browse)s</div></div>
 <div class="sec"><h2>New here? Start with these</h2><div class="guides">
@@ -565,7 +570,7 @@ def main():
     if not fast and os.path.isdir(OUT):
         shutil.rmtree(OUT, ignore_errors=True)            # a folder held by OneDrive or a browser stays: files are rewritten anyway
     os.makedirs(OUT, exist_ok=True)
-    for sub in ('css', 'js', 'fonts'):
+    for sub in ('css', 'js', 'fonts', 'brand'):
         shutil.copytree(os.path.join(WEB, sub), os.path.join(OUT, sub), dirs_exist_ok=True)
     A.build(OUT, zs, renders=not fast)
     finder = W.Finder(zs)
