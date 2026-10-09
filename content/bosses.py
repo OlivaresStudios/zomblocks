@@ -1,5 +1,6 @@
 """Hand-written boss pages (English, for players: no technical words). Every number was read in the add-on code
-(zombie_BP/src/zombies/types/*.ts) on 05/10/2026: re-check it when a boss changes. Health, speed, team and loot are
+(zombie_BP/src/zombies/types/*.ts) on 05/10/2026, the Zombot's Chain Fists and the Conductor's stands on
+09/10/2026 (packaged 1.0.0): re-check it when a boss changes. Health, speed, team and loot are
 NOT written here: the build reads them from the add-on.
 
 attacks: (name, what it does, damage label)
@@ -26,8 +27,8 @@ BOSSES = {
                   'Kill the Riot Cops first, their shields block your shots.'],
     ),
     'zombie_zombot': dict(
-        lead='A giant robot zombie, about 5 blocks tall. It slams the ground, sweeps everything in front of it and '
-             'roars so hard that everyone around is blown away.',
+        lead='A giant robot zombie, about 5 blocks tall. It slams the ground, sweeps everything in front of it, roars '
+             'so hard that everyone around is blown away, and its fists fly out on chains to reel you in.',
         attacks=[
             ('Ground slam', 'Smashes the floor 2.5 blocks in front of it: everyone within 5 blocks is hit and thrown '
                             'in the air.', '14 dmg'),
@@ -35,11 +36,14 @@ BOSSES = {
                       'them far back.', '10 dmg'),
             ('Roar', '4 shock waves in a row: every survivor within 10 blocks is pushed away and the screen shakes. '
                      'Used from up to 16 blocks.', 'push'),
+            ('Chain Fists', 'From 6 to 13 blocks away, its fists shoot out on chains, spinning like drills: the first '
+                            'survivor between them is caught, reeled in and dropped at its feet.', '8 dmg'),
             ('Call the team', 'Calls 2 team members every 27 s (never more than 6 around it).', 'x2'),
         ],
         takes='Its metal plates absorb 40% of every hit (it takes 60%), but explosions deal 120%. It never infects.',
         strategy=['Deal with its team first: the Linebacker and the Pole Vaulter rush you while it slams.',
-                  'Keep moving sideways: the sweep covers a huge arc in front of it, not behind.',
+                  'Keep moving sideways: the sweep covers a huge arc in front of it, not behind, and the chains only '
+                  'catch what stands right between its two fists.',
                   'Save your explosives (Boom Launcher, Virus Bombs, Explosive Virus Barrel) for it: they hit it '
                   'twice as hard as your melee weapons.'],
     ),
@@ -123,8 +127,8 @@ BOSSES = {
                        'You are slowed down too.', 'buff'),
             ('Call the team', 'Calls 2 team members every 27 s (never more than 6 around him).', 'x2'),
         ],
-        phases=[('Music stands (3)', 'He places 3 music stands around him. While one is standing, he takes only 30% '
-                                     'damage. When a stand breaks, the others are protected for 6 s.'),
+        phases=[('Music stands (3)', 'He places 3 music stands around him (30 health each). While one is standing, he '
+                                     'takes only 30% damage. When a stand breaks, the others are protected for 6 s.'),
                 ('Enraged', 'Once the 3 stands are broken, he takes full damage but plays allegro only.')],
         takes='30% of every hit while a music stand stands, then full damage. He never infects.',
         strategy=['Break his 3 music stands first, one every 6 s.',

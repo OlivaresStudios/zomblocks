@@ -1,5 +1,6 @@
 """Hand-written texts of the wiki pages (English, for players, no technical words). Rules and numbers were read in the
-add-on code on 05/10/2026 (zombie_BP/src); prices, odds, lists, health... are NOT written here: the build reads them.
+add-on code on 05/10/2026 (zombie_BP/src), then on 09/10/2026 in the packaged Zomblocks 1.0.0 (READY TO SEND, bundled
+scripts); prices, odds, lists, health... are NOT written here: the build reads them.
 Re-check these texts when the matching system changes."""
 
 ARMOR_INTRO = ('Armor in Zomblocks is worn like vanilla armor and shows in 3D on you. Each piece protects you; '
@@ -41,7 +42,7 @@ INFECTION_CURES = [
 ]
 INFECTION_OTHER = [
     ('Virus barrels', 'The plague cloud of a burst Explosive Virus Barrel adds 15 to everyone within 3 blocks.'),
-    ('Bloaters', 'When a Bloater bursts next to you, 25% chance to be infected (+10).'),
+    ('Bloaters', 'When a Bloater bursts next to you, 17.5% chance to be infected (+10).'),
     ('Armor', 'The Biker set halves the chance that a bite infects you; the Hazmat set divides it by 4.'),
 ]
 MONITOR_TEXT = ('A small holographic monitor shows up next to your left hand for 5 seconds every minute while you are '
@@ -49,8 +50,9 @@ MONITOR_TEXT = ('A small holographic monitor shows up next to your left hand for
                 'newest one blinks. After a treatment it shows what the treatment did for 3 seconds. It never takes the '
                 'place of a totem: with a totem in your off hand, the infection shows in the action bar instead.')
 
-TRADERS_INTRO = ('Traders are survivors who sell gear for scrap. There are 8 kinds of trader; each sells 2 kinds of items. '
-                 'Right click a trader: their menu shows what they sell and how much scrap you carry.')
+TRADERS_INTRO = ('Traders are survivors who sell gear for scrap. There are 8 kinds of trader, and all of them run the market '
+                 'of Haven Hill, the safe town (see Towns & lairs). Each one sells 2 kinds of items. Right click a trader: '
+                 'their menu shows what they sell and how much scrap you carry.')
 TRADERS_HOW = [
     ('Their stock is rolled once', 'Every trader rolls its stock the first time it is met: each common offer has a '
                                    '{Common}% chance to be there, each rare offer {Rare}% and each OP offer only {OP}%. '
@@ -63,15 +65,20 @@ TRADERS_HOW = [
 ]
 
 ALLIES_INTRO = ('Allies are survivors who follow you, fight the zombies and pick things up for you. Hire one from a Camp '
-                'Guard, or recruit a free survivor you meet.')
+                'Guard, or recruit a free survivor you meet. Give them orders: follow you, hold a spot or guard an area.')
 ALLIES_HOW = [
     ('Recruit', 'Right click a survivor and choose Recruit: they follow you and fight. The Camp Guard trader also sells '
                 'one (Hire Help).'),
-    ('Their menu', 'Right click your ally: health, status, their bag, the items you can heal them with, and Part ways.'),
+    ('Their menu', 'Right click your ally: health, what they are doing, their orders, their bag, the items you can heal '
+                   'them with, and Part ways.'),
+    ('Orders', 'Follow me: they walk with you and fight. Stay here: they hold the spot where they stand and hit what comes '
+               'close. Guard this area: they patrol about 10 blocks around that spot and fight. A marker shows the post. '
+               'Blow the Whistle: every ally leaves their post and follows you again.'),
     ('The bag', 'Every zombie your ally kills has a {chance}% chance to leave them something (never scrap). The bag holds '
                 '{bag} things; buy them from the menu for scrap.'),
-    ('Downed', 'An ally at 0 health is down. Sneak within {radius} blocks of them for {revive:g} seconds to revive them. '
-               'Nobody comes within {bleed} seconds? They retreat and leave.'),
+    ('Downed', 'An ally at 0 health is down, not dead. Sneak within {radius} blocks of them for {revive:g} seconds to '
+               'revive them. Nobody comes within {bleed} seconds? They retreat and leave.'),
+    ('Watch your swing', 'Your hits hurt your allies too: aim before you swing in a crowd.'),
     ('Part ways', 'Ends the alliance: they stay where they are as a free survivor (same name, look and bag). You can '
                   'recruit them again later.'),
     ('Find them', 'Hold a Whistle: the action bar becomes a compass pointing to your nearest ally. A Walkie-Talkie calls '
@@ -79,11 +86,14 @@ ALLIES_HOW = [
 ]
 
 BUGGY_INTRO = ('The Rusty Buggy is a two-seat vehicle with a fuel tank, a dashboard and a holographic garage to upgrade '
-               'it with weapons, wheels, lights, a trunk and paint.')
+               'it with weapons, wheels, lights and a trunk.')
 BUGGY_HOW = [
     ('Get one', 'The Tinkerer sells the Rusty Buggy item; toolboxes and supply crates rarely hold one. Right click a block '
                 'with it to place the buggy.'),
-    ('Drive', 'Right click the buggy to get in (2 seats). Look to steer, move forward to drive. Sneak to get out.'),
+    ('Drive', 'Right click the buggy to get in (2 seats). Look to steer, move forward to drive. Sneak to get out. While '
+              'you ride, your health bar is hidden; it comes back when you get out.'),
+    ('Water', 'Driven into water, the buggy floats and paddles slowly. Push forward against a bank with room on top and '
+              'it hops onto the shore. With the Floaters module it drives on the water.'),
     ('Fuel', 'A new buggy has a third of a tank. A full tank lasts about {range} blocks; right click the buggy with a Fuel '
              'Canister to add half a tank. The fuel gauge and a bar of lights are on the dashboard.'),
     ('Ram', 'Hitting a zombie at speed rams it: 1 damage, 6 with the Spiked Bumper. Bosses are never affected by the buggy '
@@ -94,11 +104,14 @@ BUGGY_HOW = [
                 '(front, roof, rear) plus the trunk; everything else stacks. A module bought once is yours for good.'),
 ]
 GARAGE_HOW = [
-    ('Open the garage', 'Right click the buggy with a wrench: a holographic garage opens over it, one card per module, '
-                        'dye or service.'),
-    ('Browse', 'Right click: next card. Punch: previous card. Sneak + right click: next category.'),
-    ('Buy, install, remove', 'Sneak + punch. The card shows the cost and whether you own it already. While you browse, '
-                             'the module blinks on the buggy.'),
+    ('Open the garage', 'Right click the buggy with a wrench: a holographic garage opens over it, one card per module or '
+                        'service, with 4 category tabs on its left (Weapons, Mobility, Utility, Service).'),
+    ('Press a button', 'Keep the wrench in hand, look at a button of the panel (a frame shows it) and right click: a '
+                       'category tab, < PREV, NEXT >, or the big button in the middle (BUY, INSTALL, REMOVE, REPAIR, '
+                       'PACK UP). Punch also goes back one card.'),
+    ('Buy, install, remove', 'The card shows the cost and whether you own it already. While you browse, the module '
+                             'blinks on the buggy. A module bought once is yours for good.'),
+    ('Close', 'Walk away from the buggy (6 blocks).'),
 ]
 
 WORLD_INTRO = 'Everything you can search, use and avoid around the world.'
@@ -106,6 +119,17 @@ CONTAINERS_TEXT = ('Right click a container: after 1 second of searching, its lo
                    '{restock} minutes later. Each one looks a little different. A vase is smashed instead of opened.')
 SUPPLY_DROP = ('A Walkie-Talkie calls your allies to you. With no ally around, it calls a supply drop instead, once a day: '
                'a supply crate falls from the sky under a parachute next to you.')
+# props/DistressDrop (read 09/10/2026)
+DISTRESS_DROP = [
+    ('A plane overhead', 'Every 20 to 40 minutes of play (the first one after 15 to 25), a plane drops a big crate 60 to '
+                         '150 blocks away from one of the players. Everyone within 220 blocks hears about it.'),
+    ('Follow the radio', 'Hold the Zombie Guidebook: for 10 minutes its compass points to the crate instead of the next '
+                         'town, with the distance.'),
+    ('It is loud', 'When the crate lands, its beacon draws every zombie within 40 blocks, and a small group shows up '
+                   'around it. Clear them before you open it.'),
+    ('First come, first served', 'Right click it: weapons, medical supplies, gadgets, tools and a pile of scrap, maybe '
+                                 'an armor piece or even a Rusty Buggy. It holds one haul only, then it is gone.'),
+]
 NOISE_TEXT = ('Some zombies hunt by ear, like the Blind. They hear survivors who walk or sprint (never the ones who sneak), '
               'weapons, explosions, the guitar, popcorn... and walk to the noise. The Ninja set makes you silent; the '
               'Scrap set makes you loud.')
@@ -114,18 +138,18 @@ BLOCK_TEXTS = {
     'electric_fence': 'Zaps and shocks every zombie that touches it (3 damage, x2 if the zombie is wet). Survivors get a '
                       'small shock too. Right click: on / off. Built at the Fabricator, 4 at a time.',
     'barricade': 'Planks and fragile glass slow the horde down, but zombies stuck in front of them bash them to pieces. '
-                 'Duct tape patches a crack.',
+                 'A Fire Axe smashes one in a single hit.',
     'unstable_floor': 'Cracks under every step and collapses after a moment. It rebuilds itself after a minute. Lure heavy '
                       'zombies on it.',
     'elevator': 'Stand on it and jump to go up to the next elevator block, sneak to go down. Zombies cannot use it.',
     'barbed_wire': 'Zombies crossing it are slowed down a lot and lose 1 health per second (bosses are not slowed). It '
-                   'wears out as they cross it and finally snaps: right click it with duct tape to make it like new.',
+                   'wears out as they cross it and finally snaps: lay a new one.',
     'glue_puddle': 'Put it on the ground: zombies walking in it are stuck (very slow). It dries up after about 30 seconds. '
                    'Built at the Fabricator, 4 at a time.',
     'sprinkler': 'Soaks every zombie within 4 blocks: wet zombies take double electric damage. It also puts out burning '
                  'survivors. Put it next to an electric fence. Built at the Fabricator.',
-    'manhole': 'Zombies climb out of it while a survivor is around (never more than 4 nearby). Right click it with duct tape '
-               'to seal it for good.',
+    'manhole': 'Zombies climb out of it while a survivor is around (never more than 4 nearby), facing the nearest one. It '
+               'cannot be broken, not even by an explosion: right click it with duct tape to seal it for good.',
 }
 HAZARDS = [
     ('Toxic clouds', 'Virus barrels, virus bombs, the Spitter and the Warden leave clouds that hurt survivors (or zombies) '
@@ -139,8 +163,8 @@ FURNITURE_INTRO = ('Houses are full of furniture you can carry, throw and build 
 FURNITURE_HOW = [
     ('Carry', 'Look at a light piece of furniture and click it to pick it up. Sneak to put it down.'),
     ('Throw', 'Attack while carrying it: it flies and hits the first zombie, 3 damage + 2 per weight point.'),
-    ('Break', 'Every piece breaks after a number of hits; zombies that get stuck bash it too. A broken Shopping Crate '
-              'spills snacks.'),
+    ('Break', 'Every piece breaks after a number of hits; zombies that get stuck bash it too. A broken fridge gives 1 or 2 '
+              'fresh foods, a broken cupboard dry food or a household item, a broken Shopping Crate snacks.'),
     ('Barricade', 'Block doors and corridors with heavy pieces. The Fort Builder achievement asks for 10 pieces.'),
 ]
 
@@ -151,39 +175,40 @@ FIRST_NIGHT = [
     ('Read the guidebook', 'You get the Zombie Guidebook the first time you join. Use it: a big book floats in front of '
                            'you. Right click turns the page, punch goes back, sneak + right click jumps to the next '
                            'chapter. It has a page for every zombie, weapon and item. Hold it in your hand: it is also a '
-                           'radio whose compass points to the nearest town.'),
+                           'radio whose compass points to the nearest town or boss lair.'),
     ('Grab a weapon', 'A baseball bat, a golf club or a frying pan is enough for the first zombies. Duffel bags and supply '
                       'crates often hold one; the Brawler and the Camp Guard sell them for 5 scrap.'),
     ('Search everything', 'Trash cans, vases, duffel bags, cardboard boxes and toolboxes can be searched (right click). '
                           'They hold food, scrap, gadgets and tools, and restock after 5 minutes.'),
-    ('Collect scrap', 'Zombies drop scrap. Spend it at the traders: each one sells 2 kinds of items and never the same '
-                      'stock twice.'),
+    ('Collect scrap', 'Zombies drop scrap, and every survivor you talk to gives you 1 a day. Spend it in Haven Hill, the '
+                      'safe town: its 8 traders each sell 2 kinds of items, never the same stock twice.'),
     ('Do not get bitten', 'Some zombies infect you. A bandage pauses the infection, medicine cures it. Watch the monitor '
                           'next to your left hand: it shows the infection every minute.'),
     ('Find a friend', 'Hire an ally from a Camp Guard (20 scrap) or recruit a free survivor. Allies fight with you and pick '
                       'up loot.'),
-    ('Barricade', 'Carry furniture into doorways. Zombies bash what blocks them, so keep an eye on it; duct tape repairs a '
-                  'cracked barricade.'),
+    ('Barricade', 'Carry furniture into doorways. Zombies bash what blocks them, so keep an eye on it and put a new piece '
+                  'when one breaks.'),
     ('Know your enemy', 'Read the zombie pages of this wiki: each one tells you how it fights and how to beat it.'),
 ]
 
 # example hologram screens shown under "How to use" (image name in img/holo, caption)
 FAB_EXAMPLES = [
-    ('fab_ready', 'You have the lighter and 3 scrap: READY, sneak + punch to build.'),
-    ('fab_missing', 'A part is missing: the strip tells you which one.'),
+    ('fab_ready', 'You have the lighter and the scrap: READY. Look at BUILD and right click.'),
+    ('fab_missing', 'A part is missing: the strip tells you which one and BUILD stays dark.'),
     ('fab_working', 'Building: the welding arm works for 2 seconds.'),
-    ('fab_combo', 'On the Electric Guitar the Electric card shows its signature combo.'),
+    ('fab_combo', 'On the Electric Guitar the Electric card shows its signature combo on top.'),
     ('fab_reinforce', 'Reinforce: each level costs more duct tape and scrap.'),
     ('fab_remove', 'Remove Mod: free, but the parts are lost.'),
     ('fab_build', 'Without a melee weapon in hand: the build cards, here 4 Glue Puddles.'),
+    ('fab_close', 'The last card of every panel: CLOSE.'),
 ]
 GARAGE_EXAMPLES = [
-    ('gar_buy', 'A module you do not own yet: TO BUY, sneak + punch to pay.'),
-    ('gar_installed', 'Already on the buggy: sneak + punch removes it (you keep it).'),
-    ('gar_missing', 'Not enough items: the action bar lists what is missing.'),
-    ('gar_paint', 'Dye cards show the painted buggy; APPLIED is the current paint.'),
+    ('gar_buy', 'A module you do not own yet: TO BUY. Look at BUY and right click to pay.'),
+    ('gar_installed', 'Already on the buggy: REMOVE takes it off (you keep it).'),
+    ('gar_missing', 'Not enough items: BUY stays dark and the action bar lists what is missing.'),
     ('gar_trunk', 'The Big Trunk needs the Trunk first.'),
-    ('gar_repair', 'Service: repair the hull with a wrench, or pack the buggy up.'),
+    ('gar_repair', 'Service: repair the hull (it uses a wrench).'),
+    ('gar_pack', 'Service: pack the buggy back into its item, modules, fuel and hull kept.'),
 ]
 
 # ------------------------------------------------------------------------------------------------ mechanics & combos
@@ -313,13 +338,14 @@ TRICKS = [
 ]
 
 # ------------------------------------------------------------------------------------------------ towns & radio
-# Read in the code on 08/10/2026 (towns/Towns.ts, towns/TownRadio.ts, status/InfectionMonitor.ts, spawning/SpawnDirector.ts).
-TOWNS_INTRO = ('Five kinds of towns are scattered across the world, each with its own buildings, loot and dangers. Your '
-               'Zombie Guidebook is also a radio that leads you to them.')
+# Read in the code on 08/10/2026 (towns/Towns.ts, towns/TownRadio.ts, status/InfectionMonitor.ts, spawning/SpawnDirector.ts),
+# then on 09/10/2026 (bosses/Arenas, npcs/Survivors, the Haven Hill raids of spawning/SpawnDirector).
+TOWNS_INTRO = ('Five kinds of towns and eight boss lairs are scattered across the world, each with its own buildings, loot '
+               'and dangers. Your Zombie Guidebook is also a radio that leads you to them.')
 # town key -> what you find there (zombie_structures/buildings/<town>)
 TOWN_TEXTS = {
-    'haven_hill': 'A walled settlement on the hills: council house, infirmary, workshop, pantry and houses behind the '
-                  'palisade.',
+    'haven_hill': 'A walled settlement on the hills, and the only safe place: council house, infirmary, workshop, pantry '
+                  'and houses behind the palisade. Its townsfolk and the 8 traders live here.',
     'ashford': 'The ruins of a city: an abandoned apartment building, a police station and a looted supermarket.',
     'pinecrest': 'A village in the pines with its fire station, a roadside motel and a school.',
     'greywater': 'A flooded town where nature took over: overgrown towers of 6 and 8 floors and an old gas station.',
@@ -327,23 +353,65 @@ TOWN_TEXTS = {
 }
 RADIO_HOW = [
     ('Hold the guidebook', 'Hold the Zombie Guidebook in your main hand: the compass on its cover points to the nearest town '
-                           'you have not discovered yet, and the action bar shows the signal, the town and the distance.'),
+                           'or boss lair you have not discovered yet, and the action bar shows the signal, its name and the '
+                           'distance. A distress drop takes over the compass for 10 minutes.'),
     ('Read the signal', 'The closer you get, the more bars light up: 4 bars under 250 m, 3 under 600 m, 2 under 1000 m, '
                         '1 beyond. "Weak signal" with a distance: the radio hears a town there but does not know which '
                         'one yet.'),
     ('Discover the town', 'Walk within 72 blocks of its centre. The monitor next to your left hand shows TOWN DISCOVERED '
                           'with the name of the town, with a little jingle.'),
+    ('Boss lairs', 'A lair shows in red on the action bar: BOSS, the name of its boss and the distance. Come close and '
+                   'the action bar names the lair. Once its boss falls, the radio skips it until the boss is back.'),
     ('Wait for the next one', 'Right after a discovery the radio loses the signal for about 3 minutes: the needle spins and '
                               'the bar shows "Weak signal". Then it points to the next town you have not found yet.'),
 ]
+# Haven Hill: spawning/SpawnDirector (no zombie by day, raids at night), npcs/Survivors
+HAVEN_FACTS = [
+    ('Safe by day', 'No zombie appears inside Haven Hill by day: the townsfolk stroll in the streets, and the 8 traders '
+                    'run the market. Talk to a townsfolk: a few words and 1 scrap, once a day.'),
+    ('Raids at night', 'At night a group of 2 to 4 zombies of the same kind gathers outside the walls and heads for the town '
+                       'about every 2 to 3 minutes. The watch bell rings: zombies at the walls!'),
+    ('Defend them', 'The townsfolk fight back with bats, golf clubs, pans and shovels. Knocked down, they wait for you: '
+                    'sneak next to them to get them back up. A survivor who had to flee is replaced by a newcomer the next '
+                    'morning.'),
+]
 TOWN_FACTS = [
-    ('More zombies', 'Inside a town up to 10 zombies roam around you by day and 18 at night (4 and 10 in the wild). Town '
+    ('More zombies', 'Zombies come out on their own, more at night. Inside a town up to 10 roam around you by day and 18 at night (4 and 10 in the wild). Town '
                      'zombies like Riot Cops, Firefighters and Mailmen are twice as common there, and the elite Tanks only '
                      'walk the streets of a town at night.'),
     ('Loot', 'Loot chests, searchable trash cans, boxes and bags (they restock after 5 minutes) and furniture in every '
              'house.'),
-    ('Manholes', 'Zombies climb out of the manholes in the streets while you are around. Right click one with duct tape to '
-                 'seal it for good.'),
+    ('Manholes', 'Zombies climb out of the manholes in the streets while you are around, and a manhole cannot be broken. '
+                 'Right click one with duct tape to seal it for good.'),
+    ('Hidden survivors', 'In the ruins of the other towns, a few survivors hide. The zombies leave them alone. Find them: '
+                         'a few words and 1 scrap, once a day.'),
     ('Elevators', 'The tall buildings have elevator pads: jump to go up, sneak to go down, right click for the list of '
                   'floors. Zombies cannot use them.'),
+]
+
+# ------------------------------------------------------------------------------------------------ boss lairs
+# bosses/Arenas (read 09/10/2026): one lair per boss, its structure and arena in towns/TownCatalog
+LAIRS_INTRO = ('Each of the 8 bosses waits in its own lair. Step onto the arena floor (in Survival) and it wakes up in '
+               'front of you, its name on your screen, with its team and its boss bar.')
+LAIR_RULES = [
+    ('It stays home', 'A boss never leaves its arena: if it strays too far, it is pulled back to its spot.'),
+    ('Nobody left?', 'When every player has been gone (48 blocks away) for 30 seconds, the boss and the zombies it called '
+                     'vanish. It comes back at full health next time.'),
+    ('Cleared', 'Once the boss falls, its lair stays cleared for 3 in-game days for everyone. Then it is back.'),
+    ('Loot for all', 'Every player who hurt it gets their own loot, straight in the inventory (see each boss page).'),
+]
+
+# ------------------------------------------------------------------------------------------------ survivors
+# npcs/Survivors, npcs/Downed (read 09/10/2026)
+SURVIVORS_INTRO = ('Not everybody turned. Survivors live in Haven Hill, and a few hide in the ruins of the other towns. '
+                   'They are friendly, a little nervous, and always happy to see a living face.')
+SURVIVORS_HOW = [
+    ('Talk to them', 'Right click a survivor: a few words and 1 scrap, once a day each. Come back tomorrow for more.'),
+    ('Townsfolk', 'The people of Haven Hill stroll around their home by day and stay put at night. They carry a bat, a golf '
+                  'club, a frying pan, a shovel or a traffic sign, and fight the zombies that come in.'),
+    ('Hidden survivors', 'In the other towns, survivors hide in the ruins. The zombies do not hunt them, and they never '
+                         'leave their hiding spot. Right click them to talk.'),
+    ('Knocked down', 'A survivor at 0 health falls instead of dying. Sneak next to them for 3 seconds to revive them. Left '
+                     'alone too long, they flee; in Haven Hill a newcomer takes their place the next morning.'),
+    ('Careful', 'Your hits hurt them too.'),
 ]

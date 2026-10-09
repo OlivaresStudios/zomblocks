@@ -80,11 +80,11 @@ def page(B, rel, title, active, crumbs, lead, main, aside='', scripts=''):
 def armor_pages(B, sets, by_id, finder):
     cats = W2.trade_categories()
     traders = W.traders()
-    loot_src = W.LOOT_TS[W.LOOT_TS.index('static readonly ARMOR'):]
-    crate_sets = [s.lower() for s in re.findall(r'ArmorSet\.(\w+)', loot_src[:loot_src.index(');')])]
-    crate_chance = next((c for t, c in W.drop_calls(W.read(os.path.join(W.SRC, 'props', 'SupplyCrate.ts'))) if t == 'ARMOR'), 0)
+    loot_src = W.LOOT_TS[re.search(r'(?:static readonly |\bLoot\.)ARMOR = ', W.LOOT_TS).start():]
+    crate_sets = [s.lower() for s in re.findall(r'ArmorSet\.(\w+)', loot_src[:loot_src.index('\n')])]
+    crate_chance = next((c for t, c in W.drop_calls(W.src('props/SupplyCrate')) if t == 'ARMOR'), 0)
     stock = W2.stock_chances()
-    rare_sets = re.findall(r'"(\w+)_"', re.search(r'const RARE_SETS = \[(.*?)\]', W.read(os.path.join(W.SRC, 'npcs', 'TradeOffers.ts'))).group(1))
+    rare_sets = re.findall(r'"(\w+)_"', re.search(r'(?:const|var|let) RARE_SETS = \[(.*?)\]', W.src('npcs/TradeOffers')).group(1))
     root = '../'
     cards = []
     for s in sets:
@@ -185,8 +185,8 @@ def infection_page(B, zs, by_id):
     cures = ''.join('<div class="item">%s<div><b>%s</b><p style="margin:0">%s</p></div></div>' % (icon(root, W.NS + k), E(n), E(t)) for k, n, t in T.INFECTION_CURES)
     other = ''.join('<div class="phase"><b>%s</b><p>%s</p></div>' % (E(t), E(x)) for t, x in T.INFECTION_OTHER)
     biters = sorted([z for z in zs if z['bite']], key=lambda z: (-z['bite'], z['name']))
-    bite_rows = ''.join('<a href="%s"><img src="%s" alt="" loading="lazy"><b>%s</b><span style="display:block;color:var(--muted);font-size:11px">%d%% per hit &middot; +%d</span></a>' % (
-        B.zurl(z), B.zimg(z), E(z['name']), round(z['bite'] * 100), z['severity']) for z in biters)
+    bite_rows = ''.join('<a href="%s"><img src="%s" alt="" loading="lazy"><b>%s</b><span style="display:block;color:var(--muted);font-size:11px">%s per hit &middot; +%d</span></a>' % (
+        B.zurl(z), B.zimg(z), E(z['name']), B.bite_pct(z['bite']), z['severity']) for z in biters)
     import make_infection_monitor as IM
     msgs = ''.join('<figure style="margin:0;text-align:center"><img src="img/monitor/%s.png" alt="" style="width:100%%;max-width:220px"><figcaption style="color:var(--muted);font-size:12px">%s</figcaption></figure>' % (
         m[0], E(m[2].title() + ' - ' + m[3].lower())) for m in IM.MESSAGES)
@@ -253,6 +253,19 @@ def allies_page(B):
     page(B, 'allies.html', 'Allies', 'allies', [], E(T.ALLIES_INTRO), main, side_pic('img/npc/survivor_ally_0.png', rows))
 
 
+def survivors_page(B):
+    """the townsfolk of Haven Hill and the hidden survivors (npcs/Survivors): how they live, their looks"""
+    looks = len(W2.skins_of('survivor'))
+    skins = ''.join('<figure><img src="img/npc/survivor_%d.png" alt="" loading="lazy"></figure>' % i for i in range(looks))
+    main = '''<div class="sec"><h2>How survivors live</h2><div class="box">%s</div></div>
+<div class="sec"><h2>Haven Hill</h2><div class="box"><p>The safe town, guarded by its people. <a href="towns.html#haven_hill">See the town &rarr;</a></p>%s</div></div>
+<div class="sec"><h2>Their looks</h2><p style="color:var(--soft)">%d faces you may meet.</p><div class="variants" style="grid-template-columns:repeat(5,1fr)">%s</div></div>''' % (
+        steps(T.SURVIVORS_HOW), steps(T.HAVEN_FACTS, 'var(--green)'), looks, skins)
+    rows = [('Talk', '1 scrap a day'), ('Live in', 'Haven Hill'), ('Hide in', 'the other towns'), ('Looks', str(looks)),
+            ('Revive', 'sneak 3 s')]
+    page(B, 'survivors.html', 'Survivors', 'survivors', [], E(T.SURVIVORS_INTRO), main, side_pic('img/npc/survivor_1.png', rows))
+
+
 # ------------------------------------------------------------------------------------------------ buggy
 def buggy_page(B, finder, by_id):
     root = ''
@@ -261,16 +274,11 @@ def buggy_page(B, finder, by_id):
     fmt = dict(range=int(num.get('TANK_RANGE', 7500)), hull=int(num.get('MAX_HULL', 100)))
     secs = []
     for c in cat:
-        if c['name'] == 'Dye':
-            sw = ''.join('<figure style="margin:0;text-align:center"><img src="img/buggy/p_%s.png" alt="" loading="lazy" style="max-width:100%%"><figcaption style="font-size:12px;color:var(--muted)">%s<br>%s</figcaption></figure>' % (
-                card['key'], E(card['name']), E(', '.join('%d %s' % (n, W.item_name(i)) for i, n in card['cost'])) or 'free') for card in c['cards'])
-            secs.append('<div class="sec"><h2>Paint</h2><p style="color:var(--soft)">Every paint costs one vanilla dye; Bare Rust is free.</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">%s</div></div>' % sw)
-            continue
         cards = []
         for card in c['cards']:
             pic = '<div class="pic"><img src="img/buggy/m_%s.png" alt="" loading="lazy"></div>' % card['key'] if card['kind'] == 'module' else ''
             cost = ''.join('<span style="display:inline-flex;align-items:center;gap:4px;margin-right:8px">%s%d %s</span>' % (icon(root, i, size=20), n, E(W.item_name(i))) for i, n in card['cost']) or 'free'
-            text = card['text'] or {'repair': 'Repairs the whole hull of a wrecked or damaged buggy.', 'pack': 'Packs the buggy back into its item, with its modules and paint (empty the trunk first).'}.get(card['key'], '')
+            text = card['text'] or {'repair': 'Repairs the whole hull of a wrecked or damaged buggy.', 'pack': 'Packs the buggy back into its item, with its modules, fuel and hull (empty the trunk first).'}.get(card['key'], '')
             cards.append('<div class="card" style="cursor:default">%s<h3>%s</h3><p>%s</p><p style="margin-top:8px;color:var(--text);font-size:12px">%s</p></div>' % (pic, E(card['name']), E(text), cost))
         secs.append('<div class="sec"><h2>%s</h2><div class="cards">%s</div></div>' % (E(c['name']), ''.join(cards)))
     f = finder.find(W.NS + 'rusty_buggy')
@@ -278,14 +286,15 @@ def buggy_page(B, finder, by_id):
 <div class="sec"><h2>The garage</h2><div class="box">%s<h3 style="margin-top:14px">What the panel shows</h3>%s</div></div>%s
 <div class="box"><h3>Where to find it</h3><p>%s</p></div>''' % (steps(T.BUGGY_HOW, fmt=fmt), steps(T.GARAGE_HOW, 'var(--blue)'), holo_gallery(T.GARAGE_EXAMPLES), ''.join(secs), find_line(B, f, root, by_id))
     price = min((t['price'] for t in f['traders']), default=0)
-    rows = [('Seats', '2'), ('Full tank', '~%d blocks' % fmt['range']), ('Hull', str(fmt['hull'])), ('Modules', str(sum(len(c['cards']) for c in cat if c['name'] not in ('Dye', 'Service')))),
-            ('Paints', str(sum(len(c['cards']) for c in cat if c['name'] == 'Dye'))), ('Price', '%d scrap' % price if price else '-')]
+    rows = [('Seats', '2'), ('Full tank', '~%d blocks' % fmt['range']), ('Hull', str(fmt['hull'])), ('Modules', str(sum(len(c['cards']) for c in cat if c['name'] != 'Service'))),
+            ('Price', '%d scrap' % price if price else '-')]
     page(B, 'buggy.html', 'Rusty Buggy', 'buggy', [], E(T.BUGGY_INTRO), main, side_pic('img/buggy/full.png', rows))
 
 
 # ------------------------------------------------------------------------------------------------ world
 TABLE_NAMES = {'SNACKS': 'Snacks', 'SCRAP': 'Scrap', 'GADGETS': 'Gadgets', 'LID': 'Trash can lid', 'TRINKETS': 'Trinkets', 'TIER1_WEAPONS': 'Melee weapon',
-               'MEDICAL': 'Medical supplies', 'TOOLS': 'Tools', 'BUGGY': 'Rusty Buggy', 'ARMOR': 'Armor piece', 'PACKAGE': 'Package'}
+               'MEDICAL': 'Medical supplies', 'TOOLS': 'Tools', 'BUGGY': 'Rusty Buggy', 'ARMOR': 'Armor piece', 'PACKAGE': 'Package',
+               'FRIDGE': 'Fresh food', 'CUPBOARD': 'Dry food or a household item'}
 
 
 def world_page(B):
@@ -311,16 +320,17 @@ def world_page(B):
     hazards = ''.join('<div class="phase" style="border-color:var(--red)"><b style="color:var(--red)">%s</b><p>%s</p></div>' % (E(t), E(x)) for t, x in T.HAZARDS)
     main = '''<div class="sec"><h2>Containers</h2><p style="color:var(--soft)">%s</p>%s</div>
 <div class="sec"><h2>Supply drops</h2><div class="box"><p>%s</p></div></div>
+<div class="sec" id="distress"><h2>Distress drops</h2><div class="box" style="display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:start"><div style="text-align:center"><img src="img/world/supply_crate.png" alt="" style="max-width:110px"></div><div>%s</div></div></div>
 <div class="sec"><h2>Special blocks</h2><div class="cards">%s</div></div>
 <div class="sec"><h2>Hazards</h2><div class="box">%s</div></div>
-<div class="sec"><h2>Noise</h2><div class="box"><p>%s</p></div></div>''' % (E(T.CONTAINERS_TEXT.format(restock=restock)), ''.join(boxes), E(T.SUPPLY_DROP), block_cards, hazards, E(T.NOISE_TEXT))
+<div class="sec"><h2>Noise</h2><div class="box"><p>%s</p></div></div>''' % (E(T.CONTAINERS_TEXT.format(restock=restock)), ''.join(boxes), E(T.SUPPLY_DROP), steps(T.DISTRESS_DROP, 'var(--yellow)'), block_cards, hazards, E(T.NOISE_TEXT))
     page(B, 'world.html', 'Loot & world', 'world', [], E(T.WORLD_INTRO), main)
 
 
 # ------------------------------------------------------------------------------------------------ furniture
 def furniture_pages(B, items):
     cards = []
-    loot_names = {'SNACKS': 'snacks'}
+    loot_names = {'SNACKS': 'snacks', 'FRIDGE': 'fresh food', 'CUPBOARD': 'dry food or a household item'}
     for f in items:
         tags = 'carry' if f['carry'] else 'heavy'
         cards.append('<a class="card" href="furniture/%s.html" data-name="%s" data-threat="0" data-hits="%d" data-tags="%s"><div class="pic"><img src="img/furniture/%s_0.png" alt="" loading="lazy"></div><h3>%s</h3><div class="meta"><span>%d hits</span><span>%s</span></div></a>' % (
@@ -329,7 +339,7 @@ def furniture_pages(B, items):
         variants = ''.join('<figure data-skin="%d"%s><img src="../img/furniture/%s_%d.png" alt="" loading="lazy"><figcaption>Colour %d</figcaption></figure>' % (
             k, ' class="on"' if k == 0 else '', f['id'], k, k + 1) for k in range(len(f['skins'])))
         rows = [('Hits to break', str(f['hits'])), ('Material', f['material'].lower()), ('Carry', 'yes' if f['carry'] else 'no, too heavy'),
-                ('Weight', str(f['weight'])), ('Thrown', '%d damage' % (3 + 2 * f['weight']) if f['carry'] else '-'), ('Drops', loot_names.get(f['loot'], 'nothing') if f['loot'] else 'nothing')]
+                ('Weight', str(f['weight'])), ('Thrown', '%d damage' % (3 + 2 * f['weight']) if f['carry'] else '-'), ('Drops', (('%d-%d ' % f['rolls'] if f['rolls'][1] > 1 else '') + loot_names.get(f['loot'], f['loot'].lower())) if f['loot'] else 'nothing')]
         aside = '''<aside class="info"><div class="viewer" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span>
 <div class="still"><img src="../img/furniture/%s_0.png" alt=""></div></div>%s</aside>''' % (f['id'], stat_rows(rows))
         lead = '%s %s' % ('Light enough to carry and throw.' if f['carry'] else 'Too heavy to carry: a solid block for your barricades.',
@@ -379,5 +389,7 @@ def search_entries(sets, furniture):
     out += [dict(title=s['name'], url='gear.html#item-%s' % s['id'], kind='gear', icon='img/items/%s.png' % s['id'], keys='deployable')
             for s in W.D.SURVIVAL if s['id'] in ('sound_decoy', 'portable_speaker', 'light_projector', 'fan_propeller', 'gas_column', 'oxygen_tank', 'virus_barrel', 'shopping_cart', 'fuel_canister', 'nitrogen_canister')]
     out += [dict(title=t['name'], url='traders.html', kind='trader', icon='img/items/scrap.png', keys='trader ' + ' '.join(t['categories'])) for t in W.traders()]
+    out += [dict(title='Survivors', url='survivors.html', kind='people', icon='img/eggs/survivor.png', keys='townsfolk hidden survivor scrap talk haven hill'),
+            dict(title='Distress drop', url='world.html#distress', kind='event', icon='img/items/walkie_talkie.png', keys='plane crate beacon radio loot')]
     out += [dict(title=a['name'], url='achievements.html', kind='achievement', icon='img/items/%s.png' % a['icon'], keys=a['text']) for a in W2.achievements()]
     return out

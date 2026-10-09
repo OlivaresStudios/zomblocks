@@ -30,8 +30,9 @@ SECTIONS = [
     ('Gear', [('weapons/index', 'Weapons', 'img/items/baseball_bat.png', 43), ('mods', 'Weapon mods & Fabricator', 'img/items/electric_cable.png', None),
               ('armor/index', 'Armor sets', 'img/items/biker_chest.png', 12), ('food', 'Food & medical', 'img/items/first_aid_kit.png', None),
               ('gear', 'Survival gear', 'img/items/flashlight.png', None)]),
-    ('People', [('traders', 'Traders', 'img/items/scrap.png', 8), ('allies', 'Allies', 'img/items/whistle.png', None)]),
-    ('World', [('towns', 'Towns & radio', 'img/items/guidebook.png', 5), ('buggy', 'Rusty Buggy', 'img/items/rusty_buggy.png', None), ('world', 'Loot & world', 'img/eggs/toolbox.png', None),
+    ('People', [('traders', 'Traders', 'img/items/scrap.png', 8), ('allies', 'Allies', 'img/items/whistle.png', None),
+                ('survivors', 'Survivors', 'img/eggs/survivor.png', None)]),
+    ('World', [('towns', 'Towns & lairs', 'img/items/guidebook.png', 13), ('buggy', 'Rusty Buggy', 'img/items/rusty_buggy.png', None), ('world', 'Loot & world', 'img/eggs/toolbox.png', None),
                ('furniture', 'Furniture', 'img/eggs/armchair.png', 17), ('achievements', 'Achievements', 'img/items/lucky_coin.png', 23)]),
 ]
 # what the coming sections will hold (shown on their "coming soon" page)
@@ -48,7 +49,7 @@ PLANNED = {
     'gear': ['Flashlight, binoculars, walkie-talkie, decoys, motion sensor, gas column...'],
     'traders': ['The 8 kinds of trader and what each one sells', 'How stock is rolled (common, rare, OP)', 'Every price, and the barter'],
     'allies': ['Hiring an ally, its menu and its bag', 'Healing, reviving (45 s when downed), dismissing', 'The whistle compass'],
-    'buggy': ['Fuel and driving', 'The 16 modules and 17 paints', 'The holographic garage and the wrench'],
+    'buggy': ['Fuel and driving', 'The 16 modules', 'The holographic garage and the wrench'],
     'world': ['Containers you can search and their loot', 'Supply drops', 'Special blocks: electric fence, barbed wire, glue, sprinkler, manhole',
               'Toxic clouds, noise and the Blind'],
     'furniture': ['The 17 pieces of furniture', 'Carrying, breaking and what they drop'],
@@ -159,8 +160,13 @@ def infobox(z, root, rows):
         ' boss' if boss else '', root, zimg(z), E(z['name']), ''.join('<div><span>%s</span><b>%s</b></div>' % r for r in rows))
 
 
+def bite_pct(bite):
+    """10.5% (one decimal when it has one)"""
+    return '%g%%' % round(bite * 100, 1)
+
+
 def infection_text(z):
-    return 'never infects' if not z['bite'] else '%d%% per hit' % round(z['bite'] * 100)
+    return 'never infects' if not z['bite'] else '%s per hit' % bite_pct(z['bite'])
 
 
 def viewer_scripts(root, z):
@@ -247,7 +253,7 @@ def zombie_list(zs):
         cards.append('<a class="card" href="%s" data-name="%s" data-threat="%d" data-health="%d" data-tags="%s"><div class="pic"><img src="../%s" alt="" loading="lazy"></div><h3>%s</h3><div class="meta">%s</div></a>' % (
             z['id'] + '.html', E(z['name']), z['threat'], z['health'], ' '.join(tags_of(z)), zimg(z), E(z['name']), sub))
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <b>Zombies</b></div>
-<div class="pagehead"><div><h1>Zombies</h1><p>%d kinds of infected, each in 3 variants. Threat goes from 1 (a nuisance) to 5 (run). Bosses have <a href="../bosses/index.html">their own page</a>.</p></div></div>
+<div class="pagehead"><div><h1>Zombies</h1><p>%d kinds of infected, each in 3 variants. They come out on their own, more at night and in the <a href="../towns.html">towns</a>. Threat goes from 1 (a nuisance) to 5 (run). Bosses have <a href="../bosses/index.html">their own page</a>.</p></div></div>
 <div class="filters"><input id="ftext" type="search" placeholder="Filter by name..."><span class="lbl">Threat</span>%s<span class="lbl">Show</span>
 <button data-tag-btn="ranged">Ranged</button><button data-tag-btn="infects">Can infect</button><button data-tag-btn="team">Boss team</button>
 <span class="lbl">Sort</span><select id="fsort"><option value="threat">Threat</option><option value="health">Health</option><option value="name">Name</option></select>
@@ -275,10 +281,15 @@ def boss_page(z, by_id):
     chips = '<span class="chip boss">BOSS</span>' + ('<span class="chip red">CAN INFECT</span>' if z['bite'] else '<span class="chip green">NEVER INFECTS</span>')
     rows = [('Threat', skulls(5)), ('Health', '%d &#10084;' % z['health']), ('Speed', E(z['speed'])), ('Damage', E(z['damage'])),
             ('Infection', infection_text(z)), ('Height', '%g blocks' % round((z['height'] or 1.9) * z['scale'], 1)), ('Team', '%d zombies' % len(z['team']))]
+    lair = next((l for l in W.lairs() if l['boss'] == z['id']), None)
+    lair_box = ('<div class="box"><h3>Its lair: %s</h3><div style="display:grid;grid-template-columns:minmax(0,220px) 1fr;gap:14px;align-items:center">'
+                '<img src="../img/towns/%s.png" alt="" loading="lazy" style="width:100%%;border-radius:8px"><p>It waits in its lair and wakes '
+                'up when you step onto the arena floor. %s Your guidebook radio leads you there. <a href="../towns.html#lairs">All the lairs &rarr;</a></p></div></div>' % (
+                    E(lair['name']), lair['id'], E(lair['tip']))) if lair else ''
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <a href="index.html">Bosses</a> / <b>%(name)s</b></div>
 <div class="entry"><div><div class="title"><h1>%(name)s</h1>%(chips)s</div>
 <p class="lead">%(lead)s</p>
-<div class="box"><h3>Boss bar</h3><p>Shown over its head during the fight, in its own theme.</p><div class="bossbar"><img class="pix" src="../img/bossbars/%(id)s.png" alt=""></div></div>
+%(lair)s<div class="box"><h3>Boss bar</h3><p>Shown over its head during the fight, in its own theme.</p><div class="bossbar"><img class="pix" src="../img/bossbars/%(id)s.png" alt=""></div></div>
 <div class="box"><h3>Attacks</h3>%(attacks)s</div>
 %(phases)s
 <div class="box"><h3>Armor</h3><p>%(takes)s</p></div>
@@ -286,7 +297,7 @@ def boss_page(z, by_id):
 <div class="box"><h3>Loot</h3><p>Every player who hurt it gets their own loot in their inventory: 20 to 30 scrap, 1 jackpot and 2 different bonus items. 25%% chance that a weapon comes upgraded (a random mod, or Reinforced III).</p>
 <div class="loot"><div class="lootcol"><h4>Jackpot (1 of)</h4>%(jackpot)s</div><div class="lootcol"><h4>Bonus (2 of)</h4>%(bonus)s</div></div></div>
 <div class="tip"><b>HOW TO BEAT IT</b><ul>%(strategy)s</ul></div>
-</div>%(info)s</div>''' % dict(name=E(z['name']), id=z['id'], chips=chips, lead=E(c['lead']), attacks=attacks,
+</div>%(info)s</div>''' % dict(name=E(z['name']), id=z['id'], chips=chips, lead=E(c['lead']), attacks=attacks, lair=lair_box,
                                phases='<div class="box"><h3>Phases</h3>%s</div>' % phases if phases else '', takes=E(c['takes']), team=team,
                                jackpot=''.join(prize(p) for p in loot['jackpot']), bonus=''.join(prize(p) for p in loot['bonus']),
                                strategy=''.join('<li>%s</li>' % E(s) for s in c['strategy']), info=infobox(z, root, rows))
@@ -297,7 +308,7 @@ def boss_list(bosses):
     rel = 'bosses/index.html'
     cards = ''.join(card(b['id'] + '.html', '../' + zimg(b), b['name'], '%d &#10084; &middot; team of %d' % (b['health'], len(b['team']))) for b in bosses)
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <b>Bosses</b></div>
-<div class="pagehead"><div><h1>Bosses</h1><p>8 giants, each with its own attacks, its own team of zombies, its own boss bar and its own loot. Every player who hurts a boss gets a share of it.</p></div></div>
+<div class="pagehead"><div><h1>Bosses</h1><p>8 giants, each with its own attacks, its own team of zombies, its own boss bar and its own loot. Each one waits in its <a href="../towns.html#lairs">lair</a> and wakes up when you walk in. Every player who hurts a boss gets a share of the loot.</p></div></div>
 <div class="cards">%s</div>''' % cards
     write(rel, layout(rel, 'Bosses', body, 'bosses/index'))
 
@@ -373,9 +384,12 @@ def weapon_page(w, ws, by_id, mods):
     if w['find']['traders']:
         t = min(w['find']['traders'], key=lambda x: x['price'] or 999)
         rows.append(('Price', '%d scrap' % t['price'] if t['price'] else 'barter'))
+    actions = A.weapon_actions(w)
+    moves = ''.join('<button data-anim="%s"%s>%s</button>' % (k, ' class="on"' if i == 0 else '', E(label)) for i, (k, label) in enumerate(actions)) if len(actions) > 1 else ''
     info = '''<aside class="info"><div class="viewer" id="viewer"><span class="badge">3D</span><span class="hint">drag to turn &middot; scroll to zoom</span>
-<div class="still"><img src="../img/w/%s.png" alt=""></div></div>%s<div class="rows">%s</div></aside>''' % (
-        w['id'], '<div class="anims">%s</div>' % buttons if buttons else '', ''.join('<div><span>%s</span><b>%s</b></div>' % r for r in rows))
+<div class="still"><img src="../img/w/%s.png" alt=""></div></div>%s%s<div class="rows">%s</div></aside>''' % (
+        w['id'], '<div class="anims">%s</div>' % moves if moves else '', '<div class="anims">%s</div>' % buttons if buttons else '',
+        ''.join('<div><span>%s</span><b>%s</b></div>' % r for r in rows))
     body = '''<div class="crumbs"><a href="../index.html">Wiki</a> / <a href="index.html">Weapons</a> / <b>%(name)s</b></div>
 <div class="entry"><div><div class="title"><h1>%(name)s</h1></div><div class="title" style="margin-top:8px">%(chips)s</div>
 <p class="lead">%(text)s</p>
@@ -487,14 +501,15 @@ def home(zs, by_id, counts):
     soon = lambda slug: slug not in BUILT  # noqa: E731
     browse = ''.join([
         card(url('mechanics'), 'img/world/gas_column.png', 'Mechanics & combos', 'Explosions, water + electricity, lures, traps'),
-        card(url('towns'), 'img/towns/haven_hill.png', 'Towns & radio', 'Find the 5 towns with the guidebook', 5),
+        card(url('towns'), 'img/towns/haven_hill.png', 'Towns & lairs', 'The 5 towns, the 8 boss lairs, the radio', 13),
         card('zombies/index.html', zimg(by_id['zombie_mime']), 'Zombies', 'Threat, abilities, counters', counts['zombies']),
         card('bosses/index.html', zimg(by_id['zombie_slender']), 'Bosses', '3D models, teams, loot', counts['bosses']),
         card(url('weapons/index'), 'img/misc/weapons.png', 'Weapons', 'Damage, durability, where to find', counts['weapons'], soon('weapons/index')),
         card(url('armor/index'), zimg(by_id['zombie_firefighter']), 'Armor sets', 'Pieces and set bonuses', counts['armor'], soon('armor/index')),
         card(url('traders'), 'img/npc/trader.png', 'Traders', 'Stock, prices, rarity', None, soon('traders')),
-        card(url('allies'), 'img/npc/ally.png', 'Allies', 'Hire, heal, revive', None, soon('allies')),
-        card(url('buggy'), 'img/misc/buggy.png', 'Rusty Buggy', '16 modules, 17 paints', None, soon('buggy')),
+        card(url('allies'), 'img/npc/ally.png', 'Allies', 'Hire, give orders, revive', None, soon('allies')),
+        card(url('survivors'), 'img/npc/survivor_1.png', 'Survivors', 'Townsfolk and hidden survivors'),
+        card(url('buggy'), 'img/misc/buggy.png', 'Rusty Buggy', '16 modules, a garage', None, soon('buggy')),
         card(url('mods'), 'img/misc/fabricator.png', 'Fabricator', 'Mods and signature combos', None, soon('mods')),
     ])
     boss_row = ''.join('<a href="%s"><img src="%s" alt="" loading="lazy"><b>%s</b></a>' % (zurl(b), zimg(b), E(b['name'])) for b in bosses)
@@ -574,6 +589,7 @@ def main():
     build2.infection_page(me, zs, by_id)
     build2.traders_page(me)
     build2.allies_page(me)
+    build2.survivors_page(me)
     build2.buggy_page(me, finder, by_id)
     build2.world_page(me)
     build2.furniture_pages(me, furn)

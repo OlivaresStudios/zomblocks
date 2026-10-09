@@ -71,36 +71,63 @@ def entity_render(geometry, texture, geos, box=(300, 300), yaw=30, pitch=20):
     return render_layers([(geo_doc(geos[geometry]), tex_of(texture))], yaw, pitch, box)
 
 
-# example hologram screens (card + status strip, as seen in game): (file name, card texture, status texture)
+# example hologram panels as seen in game (make_fabricator.py / make_buggy_garage.py layouts, 8 texels per unit):
+# the Fabricator: combo strip above the card, the card, the status strip under it, then the bar of 3 buttons
+# (< PREV, the action, NEXT >); the garage: the category tabs left of the card, the status over the bottom of the
+# card, the buttons under it. Textures by index: fabricator cards 0-4 the mods (electric, toxic, fire, frost, spiked),
+# 5-8 Reinforce, 9 Remove, 10-17 the build cards, 18-20 the shuriken mods, 21 Close; statuses 1 READY, 2-6 missing a
+# mod part, 13 working, 18 ready to remove; bars 0 WORKING, 1 BUILD, 2 BUILD (off), 3 REMOVE, 5 CLOSE. Garage cards
+# 00-05 weapons, 06-10 mobility, 11-15 utility, 16 repair, 17 pack up; statuses 1 TO BUY, 3 INSTALLED, 4 NEEDS THE
+# TRUNK, 5 READY, 6 MISSING ITEMS; bars 0 BUY, 1 BUY (off), 3 REMOVE, 4 REPAIR, 6 PACK UP; tabs_<category>.
 FAB = 'textures/olivares/zomblocks/entity/props/fabricator/'
 GAR = 'textures/olivares/zomblocks/entity/props/buggy/garage/'
 HOLO_EXAMPLES = {
-    'fab_ready': (FAB + 'card_2', FAB + 'status_1'),
-    'fab_missing': (FAB + 'card_4', FAB + 'status_6'),
-    'fab_working': (FAB + 'card_0', FAB + 'status_13'),
-    'fab_reinforce': (FAB + 'card_5', FAB + 'status_8'),
-    'fab_remove': (FAB + 'card_9', FAB + 'status_18'),
-    'fab_combo': (FAB + 'card_0', FAB + 'combo_1'),
-    'fab_build': (FAB + 'card_10', FAB + 'status_1'),
-    'gar_buy': (GAR + 'card_00', GAR + 'status_1'),
-    'gar_installed': (GAR + 'card_04', GAR + 'status_3'),
-    'gar_missing': (GAR + 'card_06', GAR + 'status_7'),
-    'gar_paint': (GAR + 'card_22', GAR + 'status_4'),
-    'gar_trunk': (GAR + 'card_14', GAR + 'status_5'),
-    'gar_repair': (GAR + 'card_33', GAR + 'status_6'),
+    'fab_ready': ('fab', dict(card=2, status=1, bar=1)),
+    'fab_missing': ('fab', dict(card=4, status=6, bar=2)),
+    'fab_working': ('fab', dict(card=0, status=13, bar=0)),
+    'fab_combo': ('fab', dict(card=0, status=1, bar=1, combo=1)),
+    'fab_reinforce': ('fab', dict(card=5, status=1, bar=1)),
+    'fab_remove': ('fab', dict(card=9, status=18, bar=3)),
+    'fab_build': ('fab', dict(card=10, status=1, bar=1)),
+    'fab_close': ('fab', dict(card=21, status=0, bar=5)),
+    'gar_buy': ('gar', dict(card=0, status=1, bar=0, tab=0)),
+    'gar_installed': ('gar', dict(card=4, status=3, bar=3, tab=0)),
+    'gar_missing': ('gar', dict(card=6, status=6, bar=1, tab=1)),
+    'gar_trunk': ('gar', dict(card=14, status=4, bar=1, tab=2)),
+    'gar_repair': ('gar', dict(card=16, status=5, bar=4, tab=3)),
+    'gar_pack': ('gar', dict(card=17, status=5, bar=6, tab=3)),
 }
 
 
-def holo_screen(card, status, k=2):
-    a, b = tex_of(card), tex_of(status)
-    img = Image.new('RGBA', (max(a.width, b.width) + 8, a.height + b.height + 12), (5, 8, 7, 255))
-    img.alpha_composite(a, (4, 4))
-    img.alpha_composite(b, (4, a.height + 8))
+def holo_screen(kind, p, k=2):
+    """one panel of the Fabricator ('fab') or of the buggy garage ('gar') on a dark background, x k"""
+    if kind == 'fab':
+        card, bar = tex_of(FAB + 'card_%d' % p['card']), tex_of(FAB + 'bar_%d' % p['bar'])
+        status = tex_of(FAB + 'status_%d' % p['status'])
+        img = Image.new('RGBA', (card.width + 16, 24 + 4 + card.height + 4 + 24 + 8 + bar.height + 16), (5, 8, 7, 255))
+        y = 8
+        if p.get('combo') is not None:
+            img.alpha_composite(tex_of(FAB + 'combo_%d' % p['combo']), (8, y))
+        y += 28
+        img.alpha_composite(card, (8, y))
+        y += card.height + 4
+        img.alpha_composite(status, (8, y))
+        img.alpha_composite(bar, (8, y + 32))
+    else:
+        card, bar = tex_of(GAR + 'card_%02d' % p['card']), tex_of(GAR + 'bar_%d' % p['bar'])
+        status, tabs = tex_of(GAR + 'status_%d' % p['status']), tex_of(GAR + 'tabs_%d' % p['tab'])
+        x = 8 + tabs.width + 8
+        img = Image.new('RGBA', (x + card.width + 8, 8 + card.height + 8 + bar.height + 8), (5, 8, 7, 255))
+        img.alpha_composite(tabs, (8, 8))
+        img.alpha_composite(card, (x, 8))
+        img.alpha_composite(status, (x, 8 + card.height - status.height))
+        img.alpha_composite(bar, (x, 8 + card.height + 8))
     return img.resize((img.width * k, img.height * k), Image.NEAREST)
 
 
 def fabricator_bundle(geos, anims):
-    """the bench + its amber hologram (Electric card, READY, a katana turning), as in game: panel 1.45 blocks above"""
+    """the bench + its amber hologram (Electric card, READY, BUILD, a katana turning), as in game: the panel
+    Fabricator.PANEL_HEIGHT blocks above"""
     ent = W.CLIENT[W.NS + 'fabricator']['desc']
     panel = W.CLIENT[W.NS + 'fabricator_panel']['desc']
     clip = {'loop': True, 'animation_length': 8, 'bones': {}}
@@ -108,22 +135,22 @@ def fabricator_bundle(geos, anims):
         clip['bones'].update(json.loads(json.dumps(anims.get(panel['animations'][key], {}).get('bones', {}))))
     if 'holo' in clip['bones']:
         clip['bones']['holo']['scale'] = 0.417                         # the katana's size on the panel (its weapon index)
-    up = [0, 1.45 * 16, 0]
+    up = [0, W.constant_number('PANEL_HEIGHT', 'workshop/Fabricator') * 16, 0]
 
     def layer(geo_key, tex):
         return dict(geo=geo_doc(geos[panel['geometry'][geo_key]]), texture=data_uri(os.path.join(W.RP, tex + '.png')),
                     offset=up, additive=True, anim=clip)
     d = 'textures/olivares/zomblocks/entity/props/fabricator/'
     return dict(geo=geo_doc(geos[ent['geometry']['default']]), textures=[data_uri(os.path.join(W.RP, ent['textures']['default'] + '.png'))],
-                anims={'bench': anims.get(ent['animations']['bench'], {})}, view=dict(yaw=-0.45, pitch=0.12, zoom=1.05),
-                layers=[layer('card', d + 'card_0'), layer('status', d + 'status_1'), layer('h3', d + 'holo_katana')])
+                anims={'bench': anims.get(ent['animations']['bench'], {})}, view=dict(yaw=-0.45, pitch=0.12, zoom=1.35),
+                layers=[layer('card', d + 'card_0'), layer('status', d + 'status_1'), layer('buttons', d + 'bar_1'), layer('h3', d + 'holo_katana')])
 
 
 def build(out, armor, furniture, containers, renders=True):
     g_, a_ = W.geometries(), W.animations()
     write_bundle(out, 'fabricator', fabricator_bundle(g_, a_))
-    for name, (card, status) in HOLO_EXAMPLES.items():
-        save(holo_screen(card, status), os.path.join(out, 'img', 'holo', name + '.png'))
+    for name, (kind, p) in HOLO_EXAMPLES.items():
+        save(holo_screen(kind, p), os.path.join(out, 'img', 'holo', name + '.png'))
     geos, anims = W.geometries(), W.animations()
     human = W.CLIENT[W.NS + 'survivor_ally']['desc']
     walk = {k: anims[v] for k, v in human.get('animations', {}).items() if v in anims and k in ('walk', 'idle', 'move')}
@@ -149,7 +176,7 @@ def build(out, armor, furniture, containers, renders=True):
     if not renders:
         return
     # traders and allies
-    for kind in ('trader', 'survivor_ally'):
+    for kind in ('trader', 'survivor_ally', 'survivor'):
         d = W.CLIENT[W.NS + kind]['desc']
         for k in range(len([t for t in d['textures'] if t.startswith('skin_')])):
             save(render_layers([(geo_doc(geos[d['geometry']['default']]), tex_of(d['textures']['skin_%d' % k]))], 28, 10, (260, 320)),
@@ -161,14 +188,12 @@ def build(out, armor, furniture, containers, renders=True):
             d = ce['desc']
             tex = d['textures'].get('skin_0') or list(d['textures'].values())[0]
             save(entity_render(d['geometry']['default'], tex, geos, (240, 240)), os.path.join(out, 'img', 'world', c['id'] + '.png'))
-    # buggy: bare, fully loaded, every module alone, every paint
+    # buggy: bare, fully loaded, every module alone (bare rust only: the paints are gone since 08/10/2026)
     import make_buggy as MB
     save(M.picture('buggy:@rust', (360, 280)), os.path.join(out, 'img', 'buggy', 'rust.png'))
-    save(M.picture('buggy:spikes,turret,rocket,susp,headlights,beacons,radar,trunk@red', (420, 320)), os.path.join(out, 'img', 'buggy', 'full.png'))
+    save(M.picture('buggy:spikes,turret,rocket,susp,headlights,beacons,radar,trunk@rust', (420, 320)), os.path.join(out, 'img', 'buggy', 'full.png'))
     for _id, key, _name, _slot, _bone, _v in MB.MODULES:
         save(M.picture('buggy:%s@rust' % key, (260, 200)), os.path.join(out, 'img', 'buggy', 'm_%s.png' % key))
-    for paint in MB.PAINTS:
-        save(M.picture('buggy:@%s' % paint, (180, 140)), os.path.join(out, 'img', 'buggy', 'p_%s.png' % paint))
     # infection monitor screens
     import make_infection_monitor as IM
 

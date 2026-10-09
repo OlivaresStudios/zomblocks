@@ -3,8 +3,8 @@ achievements, infection. Same rules as wiki_data.py."""
 import os
 import re
 
-from wiki_data import (BP, CLIENT, D, ITEM_IDS, NS, RP, SRC, TS, braced, bp_items, drop_calls, jload, loot_tables_ts, read,
-                       trade_offers)
+from wiki_data import (BP, CLIENT, D, ITEM_IDS, NS, RP, SET_RE, TS, braced, bp_items, classes, constant_number, drop_calls, jload,
+                       loot_tables_ts, src, statement_block, trade_offers)
 
 # ------------------------------------------------------------------------------------------------ armor
 ARMOR_SLOTS = {'helmet': 'Head', 'chest': 'Chest', 'legs': 'Legs', 'boots': 'Feet'}
@@ -17,10 +17,9 @@ def js_round(x):
 
 
 def armor_specs():
-    src = read(os.path.join(SRC, 'items', 'ArmorSets.ts'))
     out = []
     pat = r'\[ArmorSet\.(\w+)\]: \{ name: "([^"]+)", pieces: \[([^\]]*)\], bonus: "([^"]+)", price: (\d+), names: \{([^}]*)\} \}'
-    for m in re.finditer(pat, src):
+    for m in re.finditer(pat, src('items/ArmorSets')):
         names = dict(re.findall(r'(\w+): "([^"]+)"', m.group(6)))
         out.append(dict(key=m.group(1).lower(), name=m.group(2), pieces=re.findall(r'"(\w+)"', m.group(3)), bonus=m.group(4),
                         price=int(m.group(5)), names=names))
@@ -51,14 +50,14 @@ def armor_sets_full(finder):
 # ------------------------------------------------------------------------------------------------ traders
 def trade_rarity():
     """the rarity rule of TradeOffers.ts (rarityOf): OP / rare item lists and armor set prefixes"""
-    src = read(os.path.join(SRC, 'npcs', 'TradeOffers.ts'))
+    text = src('npcs/TradeOffers')
 
     def items(name):
-        m = re.search(r'const %s: ReadonlySet<string> = new Set\(\[(.*?)\]\);' % name, src, re.S)
+        m = re.search(SET_RE % name, text, re.S)
         return {ITEM_IDS.get(x, x) for x in re.findall(r'ItemIds\.(\w+)', m.group(1))} if m else set()
 
     def prefixes(name):
-        m = re.search(r'const %s = \[(.*?)\]' % name, src)
+        m = re.search(r'(?:const|var|let) %s = \[(.*?)\]' % name, text)
         return re.findall(r'"(\w+)"', m.group(1)) if m else []
     op_items, rare_items, op_sets, rare_sets = items('OP_ITEMS'), items('RARE_ITEMS'), prefixes('OP_SETS'), prefixes('RARE_SETS')
 
@@ -75,8 +74,8 @@ def trade_rarity():
 def trade_categories():
     """[dict(id, name, offers=[dict(item, label, price, amount, rarity, barter)])] in the trader menu order"""
     rarity = trade_rarity()
-    src = read(os.path.join(SRC, 'npcs', 'TradeOffers.ts'))
-    body = src[src.index('static readonly CATEGORIES'):]
+    text = src('npcs/TradeOffers')
+    body = text[re.search(r'(?:static readonly |\.)CATEGORIES(?:: [^=]+)? = ', text).start():]
     specs = {s['key']: s for s in armor_specs()}
     heads = list(re.finditer(r'\{\s*id: "(\w+)",\s*name: "(?:§.)?([^"]+)",', body))
     out = []
@@ -108,8 +107,7 @@ def trade_categories():
 
 
 def stock_chances():
-    src = read(os.path.join(SRC, 'npcs', 'Trader.ts'))
-    m = re.search(r'Rarity\.Common\]: ([\d.]+), \[Rarity\.Rare\]: ([\d.]+), \[Rarity\.Op\]: ([\d.]+)', src)
+    m = re.search(r'Rarity\.Common\]: ([\d.]+), \[Rarity\.Rare\]: ([\d.]+), \[Rarity\.Op\]: ([\d.]+)', src('npcs/Trader'))
     return dict(Common=round(float(m.group(1)) * 100), Rare=round(float(m.group(2)) * 100), OP=round(float(m.group(3)) * 100))
 
 
@@ -120,28 +118,27 @@ def skins_of(entity):
 
 # ------------------------------------------------------------------------------------------------ allies
 def allies():
-    am = read(os.path.join(SRC, 'npcs', 'AllyMenu.ts'))
-    sa = read(os.path.join(SRC, 'npcs', 'SurvivorAlly.ts'))
+    am = src('npcs/AllyMenu')
     ent = jload(os.path.join(BP, 'entities', 'olivares', 'zomblocks', 'npcs', 'survivor_ally.json'))['minecraft:entity']['components']
     remedies = [dict(item=ITEM_IDS.get(m.group(1)), label=m.group(2), heal=int(m.group(3)), regen=int(m.group(4)) / 20)
                 for m in re.finditer(r'\{ item: ItemIds\.(\w+), label: "([^"]+)", heal: (\d+), regenTicks: (\d+) \}', am)]
     finds = [(t, int(w), int(p)) for t, w, p in re.findall(r'\[Loot\.(\w+), (\d+), (\d+)\]', am)]
     return dict(health=ent.get('minecraft:health', {}).get('value', 30), damage=ent.get('minecraft:attack', {}).get('damage'),
-                bag=int(re.search(r'BAG_SIZE = (\d+)', am).group(1)), loot_chance=float(re.search(r'LOOT_CHANCE = ([\d.]+)', am).group(1)),
-                bleed_out=int(re.search(r'BLEED_OUT_MS = ([\d_]+)', sa).group(1).replace('_', '')) // 1000,
-                revive=int(re.search(r'REVIVE_TICKS = (\d+)', sa).group(1)) / 20,
-                revive_radius=int(re.search(r'REVIVE_RADIUS = (\d+)', sa).group(1)),
+                bag=int(constant_number('BAG_SIZE', 'npcs/AllyMenu')), loot_chance=constant_number('LOOT_CHANCE', 'npcs/AllyMenu'),
+                bleed_out=int(constant_number('BLEED_OUT_MS')) // 1000,          # npcs/SurvivorAlly, now npcs/Downed
+                revive=constant_number('REVIVE_TICKS') / 20,
+                revive_radius=int(constant_number('REVIVE_RADIUS')),
                 remedies=remedies, finds=finds, skins=skins_of('survivor_ally'))
 
 
 # ------------------------------------------------------------------------------------------------ buggy
 def buggy_catalog():
     import make_buggy_garage as G
-    src = read(os.path.join(SRC, 'vehicles', 'BuggyCatalog.ts'))
+    text = src('vehicles/BuggyCatalog')
     out = []
-    for cat in re.finditer(r'name: "(\w+)",\s*cards: \[(.*?)\n\t\t\],', src, re.S):
+    for cat in re.finditer(r'name: "(\w+)",\s*cards: (?=\[)', text):
         cards = []
-        for c in re.finditer(r'\{ card: \d+, kind: "(\w+)", key: "(\w+)", name: "([^"]+)", id: \d+, cost: \[(.*?)\] \}', cat.group(2)):
+        for c in re.finditer(r'\{ card: \d+, kind: "(\w+)", key: "(\w+)", name: "([^"]+)", id: \d+, cost: \[(.*?)\] \}', braced(text, cat.end())):
             cost = [(i, int(n)) for i, n in re.findall(r'item: "([^"]+)", amount: (\d+)', c.group(4))]
             cards.append(dict(kind=c.group(1), key=c.group(2), name=c.group(3), cost=cost, text=G.MODULE_TEXT.get(c.group(2), ('', None))[0]))
         out.append(dict(name=cat.group(1), cards=cards))
@@ -149,55 +146,52 @@ def buggy_catalog():
 
 
 def buggy_numbers():
-    return {k: float(v) for k, v in re.findall(r'static readonly ([A-Z_]+) = ([\d.]+);', read(os.path.join(SRC, 'vehicles', 'Buggy.ts')))}
+    return {k: float(v) for k, v in re.findall(r'(?:static readonly |\bBuggy\.)([A-Z_]+) = ([\d.]+);', src('vehicles/Buggy'))}
 
 
 # ------------------------------------------------------------------------------------------------ world
 def containers():
-    src = read(os.path.join(SRC, 'props', 'Searchable.ts'))
+    text = src('props/Searchable')
     out = []
-    for m in re.finditer(r'(\w+): \{ name: "([^"]+)", loot: \[(.*?)\], sound: [\w.]+(, smash: true)? \}', src):
+    for m in re.finditer(r'(\w+): \{ name: "([^"]+)", loot: \[(.*?)\], sound: [\w.]+(, smash: true)? \}', text):
         rolls = [(t, float(c)) for t, c in re.findall(r'\[Loot\.(\w+), ([\d.]+)\]', m.group(3))]
         out.append(dict(id=m.group(1), name=m.group(2), rolls=rolls, smash=bool(m.group(4))))
-    out.append(dict(id='supply_crate', name='Supply Crate', rolls=drop_calls(read(os.path.join(SRC, 'props', 'SupplyCrate.ts'))), smash=False))
-    restock = int(re.search(r'RESTOCK_MS = (\d+) \* 60', src).group(1))
+    out.append(dict(id='supply_crate', name='Supply Crate', rolls=drop_calls(src('props/SupplyCrate')), smash=False))
+    restock = int(constant_number('RESTOCK_MS', 'props/Searchable') / 60000)
     return out, loot_tables_ts(), restock
 
 
 def furniture():
-    src = read(os.path.join(SRC, 'furniture', 'FurnitureCatalog.ts'))
     pat = (r'\{ typeId: "(\w+)", name: "([^"]+)", hits: (\d+), material: FurnitureMaterial\.(\w+), carryable: (\w+), '
-           r'weight: (\d+), colors: \[.*?\](?:, loot: Loot\.(\w+))? \}')
+           r'weight: (\d+), colors: \[.*?\](?:, loot: Loot\.(\w+))?(?:, lootRolls: \[(\d+), (\d+)\])? \}')
     out = []
-    for m in re.finditer(pat, src):
+    for m in re.finditer(pat, src('furniture/FurnitureCatalog')):
         ce = next((c for k, c in CLIENT.items() if k.split(':')[-1] == m.group(1)), None)
         d = ce['desc'] if ce else None
         skins = [d['textures'][k] for k in sorted(d['textures']) if k.startswith('skin')] if d else []
         out.append(dict(id=m.group(1), name=m.group(2), hits=int(m.group(3)), material=m.group(4), carry=m.group(5) == 'true',
-                        weight=int(m.group(6)), loot=m.group(7), geometry=d['geometry']['default'] if d else None, skins=skins,
+                        weight=int(m.group(6)), loot=m.group(7), rolls=(int(m.group(8) or 1), int(m.group(9) or 1)), geometry=d['geometry']['default'] if d else None, skins=skins,
                         anims={}, kind='furniture'))
     return out
 
 
 def achievements():
-    src = read(os.path.join(SRC, 'achievements', 'Achievements.ts'))
-    pat = r'name: "([^"]+)", description: "([^"]+)", goal: (\d+), icon: `\$\{ICONS\}/(\w+)`'
-    return [dict(name=m.group(1), text=m.group(2), goal=int(m.group(3)), icon=m.group(4)) for m in re.finditer(pat, src)]
+    pat = r'name: "([^"]+)", description: "([^"]+)", goal: (\d+), icon: `\$\{ICONS\d*\}/(\w+)`'
+    return [dict(name=m.group(1), text=m.group(2), goal=int(m.group(3)), icon=m.group(4)) for m in re.finditer(pat, src('achievements/Achievements'))]
 
 
 def infection():
-    src = read(os.path.join(SRC, 'status', 'Infection.ts'))
-    stages = re.findall(r'name: "([^"]+)",\s*hint: "[^"]*",\s*threshold: (\d+)', src)
-    period = int(re.search(r'PROGRESSION_PERIOD = (\d+)', src).group(1))
-    turned = re.findall(r'"olivares_zomblocks:(\w+)"', re.search(r'TURNED_ZOMBIES = \[(.*?)\]', src).group(1))
+    text = src('status/Infection')
+    stages = re.findall(r'name: "([^"]+)",\s*hint: "[^"]*",\s*threshold: (\d+)', text)
+    period = int(constant_number('PROGRESSION_PERIOD', 'status/Infection'))
+    turned = re.findall(r'"olivares_zomblocks:(\w+)"', re.search(r'TURNED_ZOMBIES(?:: [^=]+)? = \[(.*?)\]', text).group(1))
     return dict(stages=[(n, int(t)) for n, t in stages], seconds_per_level=period / 20, turned=turned)
 
 
 def bite_severities():
     sev = {}
-    for _f, src in TS.items():
-        for m in re.finditer(r'export class (\w+) extends \w+', src):
-            body = braced(src, src.index('{', m.end()))
+    for _f, text in TS.items():
+        for _name, _parent, body in classes(text):
             tid = re.search(r'typeId = "olivares_zomblocks:(\w+)"', body)
             s = re.search(r'biteSeverity = (\d+)', body)
             if tid and s:

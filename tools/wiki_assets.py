@@ -94,17 +94,49 @@ def weapon_render(w, box=(300, 300), mod=None):
     return img.resize((img.width * k, img.height * k), Image.NEAREST) if k > 1 else img
 
 
+# the weapon's own animations (make_weapon_anims.py, 05/10/2026), third person: they move the bone wa_grip
+WEAPON_ACTIONS = [('idle', 'Idle', 'idle_third_person'), ('use', 'Right click', 'use_third_person'), ('swing', 'Swing', 'swing_third_person')]
+_ANIMS = {}
+
+
+def _anims():
+    if not _ANIMS:
+        _ANIMS.update(W.animations())
+    return _ANIMS
+
+
+def weapon_actions(w):
+    """[(clip key, button label)] of the animations this weapon has (idle first), e.g. [('idle', 'Idle'), ('use', 'Right click')]"""
+    if w['model'] != 'attachable':
+        return []
+    return [(key, label) for key, label, kind in WEAPON_ACTIONS
+            if 'animation.olivares_zomblocks.weapon.%s.%s' % (w['id'], kind) in _anims()]
+
+
 def weapon_bundle(w, anims):
     geo, tex = weapon_geo_tex(w)
     rest, yaw, pitch = weapon_view(w)
     bones = {b['name'] for b in geo['minecraft:geometry'][0]['bones']}
-    clip = {'loop': True, 'animation_length': 4, 'bones': {}}
-    if WEAPON_FX in anims:
-        clip['bones'].update({k: v for k, v in anims[WEAPON_FX].get('bones', {}).items() if k in bones})
-    for bone, ch in rest.items():
-        clip['bones'].setdefault(bone, {}).update(ch)
+
+    def clip_of(action=None):
+        clip = {'loop': True, 'animation_length': 4, 'bones': {}}
+        if WEAPON_FX in anims:
+            clip['bones'].update({k: json.loads(json.dumps(v)) for k, v in anims[WEAPON_FX].get('bones', {}).items() if k in bones})
+        if action:                                         # one shot: plays, holds a moment, starts again (viewer.js)
+            clip['bones'].update({k: v for k, v in action.get('bones', {}).items() if k in bones})
+            clip['animation_length'] = action.get('animation_length', 1)
+            clip['loop'] = True if action.get('loop') is True else False
+        for bone, ch in rest.items():
+            clip['bones'].setdefault(bone, {}).update(ch)
+        return clip
+    clips = {'show': clip_of()}
+    for key, _label in weapon_actions(w):
+        kind = next(k for a, _l, k in WEAPON_ACTIONS if a == key)
+        clips[key] = clip_of(anims['animation.olivares_zomblocks.weapon.%s.%s' % (w['id'], kind)])
+    if 'idle' in clips:                                    # the first clip plays first: idle when there is one
+        clips = dict(idle=clips.pop('idle'), **clips)
     mods = sorted({b[4] for b in bones if b.startswith('mod_') and len(b) >= 5})
-    return dict(geo=geo, textures=[data_uri(tex)], anims={'show': clip}, view=dict(yaw=yaw, pitch=pitch), mods=mods)
+    return dict(geo=geo, textures=[data_uri(tex)], anims=clips, view=dict(yaw=yaw, pitch=pitch), mods=mods)
 
 
 def build_weapons(out, weapons, mods, renders=True):

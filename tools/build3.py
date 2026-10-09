@@ -59,7 +59,7 @@ def mechanics_page(B):
 def _town_pictures(B, fast):
     d = os.path.join(B.OUT, 'img', 'towns')
     os.makedirs(d, exist_ok=True)
-    for t in W.D.TOWNS:
+    for t in W.D.TOWNS + [e for e in getattr(W.D, 'BOSS_LAIRS', []) if e.get('pic')]:
         key = t['pic'].split('/')[-1]
         path = os.path.join(d, key + '.png')
         if fast and os.path.exists(path):
@@ -67,11 +67,11 @@ def _town_pictures(B, fast):
         W.M.picture(t['pic'], (420, 300)).save(path)
 
 
-def _signal(bars, text):
+def _signal(bars, text, color='var(--green)'):
     g = '|' * bars
     return ('<div style="font:600 15px ui-monospace,Consolas,monospace;background:#050807;border:1px solid var(--line);'
-            'border-radius:8px;padding:8px 12px;margin:6px 0;color:#9aa5a0"><span style="color:#55605a">[</span><span style="color:var(--green)">%s</span>'
-            '<span style="color:#2f3833">%s</span><span style="color:#55605a">]</span> %s</div>' % (g, '|' * (4 - bars), E(text)))
+            'border-radius:8px;padding:8px 12px;margin:6px 0;color:#9aa5a0"><span style="color:#55605a">[</span><span style="color:%s">%s</span>'
+            '<span style="color:#2f3833">%s</span><span style="color:#55605a">]</span> %s</div>' % (color, g, '|' * (4 - bars), E(text)))
 
 
 def towns_page(B, fast=False):
@@ -79,7 +79,8 @@ def towns_page(B, fast=False):
     radio = ('<div class="box" style="display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center">'
              '<div style="text-align:center"><img class="pix" src="img/items/guidebook.png" alt="" style="width:96px;height:96px;'
              'image-rendering:pixelated"></div><div><h3 style="margin:0 0 6px">The action bar, as you walk</h3>%s%s%s%s</div></div>') % (
-        _signal(1, 'Weak signal 1450m'), _signal(2, 'Ashford 820m'), _signal(4, 'Pinecrest 180m'), _signal(1, 'Weak signal'))
+        _signal(1, 'Weak signal 1450m'), _signal(2, 'Ashford 820m'), _signal(4, 'Pinecrest 180m'), _signal(1, 'Weak signal')
+        + _signal(3, 'BOSS The Zombot 410m', 'var(--red)'))
     towns = []
     for t in W.D.TOWNS:
         key = t['pic'].split('/')[-1]
@@ -87,11 +88,21 @@ def towns_page(B, fast=False):
                      '<h3>%s</h3><p style="color:var(--yellow);font-size:12px;margin:0 0 6px">%s %s</p><p>%s</p>'
                      '<img src="img/monitor/town_%s.png" alt="TOWN DISCOVERED: %s" loading="lazy" style="width:100%%;margin-top:10px;image-rendering:pixelated;border-radius:6px"></div>' % (
                          key, key, E(t['name']), E(t['line'][0]), E(t['line'][1]), E(T.TOWN_TEXTS.get(key, t['text'])), key, E(t['name'])))
+    names = {b['id']: b['name'] for b in W.D.BOSSES}
+    lairs = []
+    for l in W.lairs():
+        who = ('<a href="bosses/%s.html">%s</a>' % (l['boss'], E(names[l['boss']]))) if l['boss'] in names else E(l['boss_name'])
+        lairs.append('<div class="card" style="cursor:default" id="lair-%s"><div class="pic" style="height:180px"><img src="img/towns/%s.png" alt="" loading="lazy"></div>'
+                     '<h3>%s</h3><p style="color:var(--red);font-size:12px;margin:0 0 6px">Boss: %s</p><p>%s</p></div>' % (
+                         l['id'], l['id'], E(l['name']), who, E(l['tip'])))
     main = '''<div class="sec"><h2>The guidebook radio</h2>%s%s</div>
 <div class="sec"><h2>The 5 towns</h2><p style="color:var(--soft)">Each town only appears in the biomes that suit it. Below each one: the screen your monitor shows when you discover it.</p><div class="cards">%s</div></div>
-<div class="sec"><h2>Life in town</h2>%s</div>''' % (
-        radio, build2.steps(T.RADIO_HOW, 'var(--yellow)'), ''.join(towns), build2.steps(T.TOWN_FACTS, 'var(--green)'))
-    build2.page(B, 'towns.html', 'Towns & radio', 'towns', [], E(T.TOWNS_INTRO), main)
+<div class="sec" id="haven"><h2>Haven Hill, the safe town</h2>%s<p style="color:var(--soft)">Its people: <a href="survivors.html">Survivors</a> &middot; its market: <a href="traders.html">Traders</a>.</p></div>
+<div class="sec"><h2>Life in town</h2>%s</div>
+<div class="sec" id="lairs"><h2>The 8 boss lairs</h2><p style="color:var(--soft)">%s</p><div class="cards">%s</div><div class="box" style="margin-top:14px">%s</div></div>''' % (
+        radio, build2.steps(T.RADIO_HOW, 'var(--yellow)'), ''.join(towns), build2.steps(T.HAVEN_FACTS, 'var(--green)'),
+        build2.steps(T.TOWN_FACTS, 'var(--green)'), E(T.LAIRS_INTRO), ''.join(lairs), build2.steps(T.LAIR_RULES, 'var(--red)'))
+    build2.page(B, 'towns.html', 'Towns & lairs', 'towns', [], E(T.TOWNS_INTRO), main)
 
 
 def search_entries():
@@ -108,4 +119,7 @@ def search_entries():
                         keys='town radio ' + t['line'][1]))
     out.append(dict(title='Guidebook radio', url='towns.html', kind='section', icon='img/items/guidebook.png',
                     keys='radio compass signal weak signal town discovered'))
+    for l in W.lairs():
+        out.append(dict(title=l['name'], url='towns.html#lair-%s' % l['id'], kind='lair', icon='img/eggs/%s.png' % l['boss'],
+                        keys='boss lair arena ' + l['boss_name']))
     return out
